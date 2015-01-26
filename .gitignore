@@ -246,3 +246,9 @@ coverage.xml
 docs/_build/
 # PyBuilder
 target/
+
+## =================================================
+## ================== PyCharm ======================
+
+## Directory-based project format
+.idea/
