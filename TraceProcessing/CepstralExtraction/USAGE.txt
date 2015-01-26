@@ -1,2 +1,0 @@
-﻿\bin\Debug\CepstralExtraction.exe input=C:\Users\cai\Desktop\cepstral-model\HLIST39cepstral.pre.out output=C:\Users\cai\Desktop\cepstral-model\ProcessedResult.log C=0,1,2,3,4,5,6,7,8,9,10,11,12 D=0,1,2,3,4,5,6,7,8,9,10,11,12 A=0,1,2,3,4,5,6,7,8,9,10,11,12
-
