@@ -5,6 +5,7 @@ Extract some cepstral coefficients from HTK's output file.
 
 import sys
 import re
+from cw_common import parse_args
 
 
 def filter_coefficients(input_filename, output_filename, c_list, d_list, a_list, silent):
@@ -104,38 +105,6 @@ def filter_coefficients(input_filename, output_filename, c_list, d_list, a_list,
 
                     output_file.write(line_to_write)
 
-
-def parse_args(args):
-    """
-    Parses command line arguments into switches, parameters and commands
-    :param args:
-    :return:
-    """
-    # Switches look like "-switch"
-    switches = [
-        arg
-        for arg in args
-        if arg[0] == "-"
-    ]
-
-    # Parameters look like "parameter=value"
-    parameters = dict([
-        (
-            arg.split("=")[0],
-            arg.split("=")[1]
-        )
-        for arg in args
-        if arg[0] != "-" and "=" in arg
-    ])
-
-    # commands look like "command"
-    commands = [
-        arg
-        for arg in args
-        if arg[0] != "-" and "=" not in arg
-    ]
-
-    return switches, parameters, commands
 
 
 def get_parameter(parameters, param_name, required=False):
