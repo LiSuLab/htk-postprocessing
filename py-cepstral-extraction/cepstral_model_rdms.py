@@ -5,6 +5,7 @@ Extract some cepstral coefficients from HTK's output file.
 
 import sys
 import re
+import scipy.io
 
 
 def filter_coefficients(input_filename, output_filename, c_list, d_list, a_list, silent):
