@@ -22,52 +22,52 @@ def main(input_filename, output_filename, c_list, d_list, a_list):
 
 	word_name_pattern = r"^-+ Source- (?P<wordname>[a-z]+)\.wav -+$"
 	word_name_re = re.compile(word_name_pattern)
-	frame_vector_pattern = r"^(?P<frameid>[0-9]+): " \
-	                       r"(?P<C01>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<C02>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<C03>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<C04>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<C05>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<C06>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<C07>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<C08>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<C08>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<C10>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<C11>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<C12>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<C00>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<D01>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<D02>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<D03>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<D04>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<D05>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<D06>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<D07>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<D08>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<D08>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<D10>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<D11>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<D12>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<D00>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<A01>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<A02>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<A03>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<A04>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<A05>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<A06>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<A07>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<A08>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<A08>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<A10>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<A11>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<A12>-?[0-9]+\.[0-9]+) " \
-	                       r"(?P<A00>-?[0-9]+\.[0-9]+)$"
+	frame_vector_pattern = (r"^(?P<frameid>[0-9]+): "
+	                        r"(?P<C01>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<C02>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<C03>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<C04>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<C05>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<C06>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<C07>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<C08>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<C09>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<C10>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<C11>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<C12>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<C00>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<D01>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<D02>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<D03>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<D04>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<D05>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<D06>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<D07>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<D08>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<D09>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<D10>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<D11>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<D12>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<D00>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<A01>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<A02>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<A03>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<A04>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<A05>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<A06>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<A07>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<A08>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<A09>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<A10>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<A11>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<A12>-?[0-9]+\.[0-9]+) "
+	                        r"(?P<A00>-?[0-9]+\.[0-9]+)$")
 
 	frame_vector_re = re.compile(frame_vector_pattern)
 
-	c_list_match_names = c_list.map(lambda c: "C{0}".format(c.zfill(2)))
-	d_list_match_names = d_list.map(lambda d: "D{0}".format(d.zfill(2)))
-	a_list_match_names = a_list.map(lambda a: "A{0}".format(a.zfill(2)))
+	c_list_match_names = list(map(lambda c: "C{0}".format(c.zfill(2)), c_list))
+	d_list_match_names = list(map(lambda d: "D{0}".format(d.zfill(2)), d_list))
+	a_list_match_names = list(map(lambda a: "A{0}".format(a.zfill(2)), a_list))
 
 	# Start reading from the input file
 	with open(input_filename, encoding="utf-8") as input_file:
@@ -84,16 +84,18 @@ def main(input_filename, output_filename, c_list, d_list, a_list):
 					# Matched a frame vector line
 
 					# Get the requested coefficients
-					c_coeffs = c_list_match_names.map(lambda c_match_name: frame_vector_match.group(c_match_name))
-					d_coeffs = d_list_match_names.map(lambda d_match_name: frame_vector_match.group(d_match_name))
-					a_coeffs = a_list_match_names.map(lambda a_match_name: frame_vector_match.group(a_match_name))
+					c_coeffs = list(map(lambda c_match_name: frame_vector_match.group(c_match_name), c_list_match_names))
+					d_coeffs = list(map(lambda d_match_name: frame_vector_match.group(d_match_name), d_list_match_names))
+					a_coeffs = list(map(lambda a_match_name: frame_vector_match.group(a_match_name), a_list_match_names))
 
+					# todo for loop to remove leading comma, improve readability
 					line_to_write = functools.reduce(
-						lambda list, item: "{0},{1}".format(list, item),
+						lambda l, i: "{0},{1}".format(l, i),
 						c_coeffs + d_coeffs + a_coeffs,
 						""
 					)
-					line_to_write = "{0}:{1}".format(frame_vector_match.group("frameid"), line_to_write)
+					# todo: prepend
+					line_to_write = "{0}:{1}\n".format(frame_vector_match.group("frameid"), line_to_write)
 					output_file.write(line_to_write)
 
 
@@ -147,7 +149,7 @@ def get_parameter(parameters, param_name):
 		""
 		"For example:"
 		"python extract_cepstral_coefficients "
-		"input=C:\\Users\\ca\i\Desktop\\cepstral-model\\HLIST39cepstral.pre.out "
+		"input=C:\\Users\\cai\\Desktop\\cepstral-model\\HLIST39cepstral.pre.out "
 		"output=C:\\Users\\cai\\Desktop\\cepstral-model\\ProcessedResult.log "
 		"C=0,1,2,3,4,5,6,7,8,9,10,11,12 "
 		"D=0,1,2,3,4,5,6,7,8,9,10,11,12 "
