@@ -140,11 +140,12 @@ def parse_args(args):
     return switches, parameters, commands
 
 
-def get_parameter(parameters, param_name):
+def get_parameter(parameters, param_name, required=False):
     """
     Gets parameters from a parameter list
     :param parameters:
     :param param_name:
+    :param required:
     :return: :raise ValueError:
     """
     usage_text = (
@@ -164,11 +165,13 @@ def get_parameter(parameters, param_name):
         "A=0,1,2,3,4,5,6,7,8,9,10,11,12"
     )
     if param_name in parameters:
-        input_file = parameters[param_name]
-    else:
+        param = parameters[param_name]
+    elif required:
         print(usage_text)
         raise ValueError("Require {0} parameter.".format(param_name))
-    return input_file
+    else:
+        return ""
+    return param
 
 
 # noinspection PyUnusedLocal
@@ -182,8 +185,8 @@ def process_args(switches, parameters, commands):
     """
     silent = "S" in switches
 
-    input_file = get_parameter(parameters, "input")
-    output_file = get_parameter(parameters, "output")
+    input_file = get_parameter(parameters, "input", True)
+    output_file = get_parameter(parameters, "output", True)
     c_list = get_parameter(parameters, "C").split(",")
     d_list = get_parameter(parameters, "D").split(",")
     a_list = get_parameter(parameters, "A").split(",")
