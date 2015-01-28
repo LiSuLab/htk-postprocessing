@@ -167,3 +167,5 @@ if __name__ == "__main__":
     (input_file, output_file, c_list, d_list, a_list, silent) = process_args(switches, parameters, commands)
 
     filter_coefficients(input_file, output_file, c_list, d_list, a_list, silent)
+
+    # todo: cap at 200 ms (user-settable)

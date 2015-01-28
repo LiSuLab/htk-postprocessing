@@ -5,6 +5,7 @@ import re
 import scipy.io
 from cw_common import parse_args
 
+# todo refactor this out of here and extract_cepstral_coefficients.py
 def get_parameter(parameters, param_name, required=False):
     """
     Gets parameters from a parameter list
@@ -13,23 +14,17 @@ def get_parameter(parameters, param_name, required=False):
     :param required:
     :return: :raise ValueError:
     """
-    raise NotImplementedError()
-
     usage_text = (
-        "python extract_cepstral_coefficients "
+        "python cepstral_model_rdms "
         "input=<input-path> "
         "output=<output-path> "
-        "C=<CC-list> "
-        "D=<DC-list> "
-        "A=<AC-list> "
+        "distance=<distance>"
         ""
         "For example:"
-        "python extract_cepstral_coefficients "
-        "input=C:\\Users\\cai\\Desktop\\cepstral-model\\HLIST39cepstral.pre.out "
-        "output=C:\\Users\\cai\\Desktop\\cepstral-model\\ProcessedResult.log "
-        "C=0,1,2,3,4,5,6,7,8,9,10,11,12 "
-        "D=0,1,2,3,4,5,6,7,8,9,10,11,12 "
-        "A=0,1,2,3,4,5,6,7,8,9,10,11,12"
+        "python cepstral_model_rdms "
+        "input=C:\\Users\\cai\\Desktop\\cepstral-model\\ProcessedResult.log "
+        "output=C:\\Users\\cai\\Desktop\\cepstral-model\\RDMs.mat "
+        "distance=Pearson"
     )
     if param_name in parameters:
         param = parameters[param_name]
@@ -52,20 +47,59 @@ def process_args(switches, parameters, commands):
     """
     silent = "S" in switches
 
-    raise NotImplementedError()
-
     input_file = get_parameter(parameters, "input", True)
     output_file = get_parameter(parameters, "output", True)
-    c_list = get_parameter(parameters, "C").split(",")
-    d_list = get_parameter(parameters, "D").split(",")
-    a_list = get_parameter(parameters, "A").split(",")
+    distance = get_parameter(parameters, "distance")
 
-    return input_file, output_file, c_list, d_list, a_list, silent
+    return input_file, output_file, distance
+
+
+def get_condition_vectors(input_filename, output_filename):
+
+    condition_label_re = re.compile(r"^(?P<conditionlabel>[a-z]+)$")
+    feature_vector_re = re.compile(r"^(?P<frameid>[0-9]+):(?P<featurevector>.*)$")
+
+    condition_vectors = dict()
+
+    with open(input_filename, encoding="utf-8") as input_file:
+        with open(output_filename, mode="w", encoding="utf-8") as output_file:
+
+            this_condition_label = None
+            this_frame_number = None
+            this_condition_vector = None
+
+            for line in input_file:
+
+                condition_label_match = condition_label_re.match(line)
+                feature_vector_match = feature_vector_re.match(line)
+
+                if condition_label_match:
+                    # We've matched a new condition label
+
+                    # If there's a condition that's already been processed, remember what we've got so far
+                    if this_condition_label is not None:
+                        condition_vectors[this_condition_label] = {
+                            this_frame_number: this_condition_vector
+                        }
+
+                    this_condition_label = condition_label_match.group("conditionlabel")
+                    this_condition_vector = None
+                    this_frame_number = None
+
+                elif feature_vector_match:
+                    this_frame_number = feature_vector_match.group("frameid")
+                    this_condition_vector = feature_vector_match.group("featurevector").split(",")
+
+    return condition_vectors
+
 
 
 if __name__ == "__main__":
     args = sys.argv
     (switches, parameters, commands) = parse_args(args)
-    #(input_file, output_file, c_list, d_list, a_list, silent) = process_args(switches, parameters, commands)
+    (input_file, output_file, distance) = process_args(switches, parameters, commands)
 
-    #filter_coefficients(input_file, output_file, c_list, d_list, a_list, silent)
+    condition_vectors = get_condition_vectors(input_file, output_file)
+
+    # todo: need to have a frame-indexed collection of word-by-word rdms
+    rdms =
