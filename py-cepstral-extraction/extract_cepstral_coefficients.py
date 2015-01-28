@@ -140,6 +140,7 @@ def process_args(switches, parameters, commands):
         "C=<CC-list> "
         "D=<DC-list> "
         "A=<AC-list> "
+        "frames=<frames|20>"
         ""
         "For example:"
         "python extract_cepstral_coefficients "
@@ -147,7 +148,8 @@ def process_args(switches, parameters, commands):
         "output=C:\\Users\\cai\\Desktop\\cepstral-model\\ProcessedResult.log "
         "C=0,1,2,3,4,5,6,7,8,9,10,11,12 "
         "D=0,1,2,3,4,5,6,7,8,9,10,11,12 "
-        "A=0,1,2,3,4,5,6,7,8,9,10,11,12"
+        "A=0,1,2,3,4,5,6,7,8,9,10,11,12 "
+        "frames=20"
     )
 
     silent = "S" in switches
@@ -157,15 +159,19 @@ def process_args(switches, parameters, commands):
     c_list = get_parameter(parameters, "C", usage_text=usage_text).split(",")
     d_list = get_parameter(parameters, "D", usage_text=usage_text).split(",")
     a_list = get_parameter(parameters, "A", usage_text=usage_text).split(",")
+    frames = get_parameter(parameters, "frames", usage_text=usage_text)
 
-    return input_file, output_file, c_list, d_list, a_list, silent
+    # set defaults
+    frames = frames if frames != "" else 20 # default of 20
+
+    return silent, input_file, output_file, c_list, d_list, a_list, frames
 
 
 if __name__ == "__main__":
     args = sys.argv
     (switches, parameters, commands) = parse_args(args)
-    (input_file, output_file, c_list, d_list, a_list, silent) = process_args(switches, parameters, commands)
+    (silent, input_file, output_file, c_list, d_list, a_list, frames) = process_args(switches, parameters, commands)
 
-    filter_coefficients(input_file, output_file, c_list, d_list, a_list, silent)
+    filter_coefficients(silent, input_file, output_file, c_list, d_list, a_list, frames)
 
     # todo: cap at 200 ms (user-settable)
