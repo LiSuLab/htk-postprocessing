@@ -3,13 +3,11 @@
 Extract some cepstral coefficients from HTK's output file.
 """
 
-import sys
 import re
+from cw_common import *
 
-__author__ = 'cai'
 
-
-def filter_coefficients(input_filename, output_filename, c_list, d_list, a_list, silent):
+def filter_coefficients(silent, input_filename, output_filename, c_list, d_list, a_list, frames):
     """
     Main function.
     :param silent:
@@ -86,88 +84,44 @@ def filter_coefficients(input_filename, output_filename, c_list, d_list, a_list,
                 elif frame_vector_match:
                     # Matched a frame vector line
 
-                    # Get the requested coefficients
-                    c_coeffs = list(
-                        map(lambda c_match_name: frame_vector_match.group(c_match_name), c_list_match_names))
-                    d_coeffs = list(
-                        map(lambda d_match_name: frame_vector_match.group(d_match_name), d_list_match_names))
-                    a_coeffs = list(
-                        map(lambda a_match_name: frame_vector_match.group(a_match_name), a_list_match_names))
+                    frame_id = frame_vector_match.group("frameid")
 
-                    line_to_write = ""
-                    line_to_write += frame_vector_match.group("frameid")
-                    line_to_write += ":"
-                    for coeff in c_coeffs + d_coeffs + a_coeffs:
-                        line_to_write += coeff
-                        line_to_write += ","
-                    # remove trailing comma
-                    line_to_write = line_to_write[:-1]
-                    line_to_write += "\n"
+                    # Only want to import if the frameid is less than the number of frames requested
+                    if int(frame_id) < frames:
+                        # Get the requested coefficients
+                        c_coeffs = list(
+                            map(lambda c_match_name: frame_vector_match.group(c_match_name), c_list_match_names))
+                        d_coeffs = list(
+                            map(lambda d_match_name: frame_vector_match.group(d_match_name), d_list_match_names))
+                        a_coeffs = list(
+                            map(lambda a_match_name: frame_vector_match.group(a_match_name), a_list_match_names))
 
-                    output_file.write(line_to_write)
+                        line_to_write = ""
+                        line_to_write += frame_id
+                        line_to_write += ":"
+                        for coeff in c_coeffs + d_coeffs + a_coeffs:
+                            line_to_write += coeff
+                            line_to_write += ","
+                        # remove trailing comma
+                        line_to_write = line_to_write[:-1]
+                        line_to_write += "\n"
 
-
-def parse_args(args):
-    """
-    Parses command line arguments into switches, parameters and commands
-    :param args:
-    :return:
-    """
-    # Switches look like "-switch"
-    switches = [
-        arg
-        for arg in args
-        if arg[0] == "-"
-    ]
-
-    # Parameters look like "parameter=value"
-    parameters = dict([
-        (
-            arg.split("=")[0],
-            arg.split("=")[1]
-        )
-        for arg in args
-        if arg[0] != "-" and "=" in arg
-    ])
-
-    # commands look like "command"
-    commands = [
-        arg
-        for arg in args
-        if arg[0] != "-" and "=" not in arg
-    ]
-
-    return switches, parameters, commands
+                        output_file.write(line_to_write)
 
 
-def get_parameter(parameters, param_name, required=False):
+def get_parameter(parameters, param_name, required=False, usage_text=None):
     """
     Gets parameters from a parameter list
     :param parameters:
     :param param_name:
     :param required:
+    :param usage_text:
     :return: :raise ValueError:
     """
-    usage_text = (
-        "python extract_cepstral_coefficients "
-        "input=<input-path> "
-        "output=<output-path> "
-        "C=<CC-list> "
-        "D=<DC-list> "
-        "A=<AC-list> "
-        ""
-        "For example:"
-        "python extract_cepstral_coefficients "
-        "input=C:\\Users\\cai\\Desktop\\cepstral-model\\HLIST39cepstral.pre.out "
-        "output=C:\\Users\\cai\\Desktop\\cepstral-model\\ProcessedResult.log "
-        "C=0,1,2,3,4,5,6,7,8,9,10,11,12 "
-        "D=0,1,2,3,4,5,6,7,8,9,10,11,12 "
-        "A=0,1,2,3,4,5,6,7,8,9,10,11,12"
-    )
     if param_name in parameters:
         param = parameters[param_name]
     elif required:
-        print(usage_text)
+        if usage_text is not None: print(usage_text)
         raise ValueError("Require {0} parameter.".format(param_name))
     else:
         return ""
@@ -183,20 +137,43 @@ def process_args(switches, parameters, commands):
     :param commands:
     :return:
     """
+    usage_text = (
+        "python extract_cepstral_coefficients "
+        "input=<input-path> "
+        "output=<output-path> "
+        "C=<CC-list> "
+        "D=<DC-list> "
+        "A=<AC-list> "
+        "frames=<frames|20>"
+        ""
+        "For example:"
+        "python extract_cepstral_coefficients "
+        "input=C:\\Users\\cai\\Desktop\\cepstral-model\\HLIST39cepstral.pre.out "
+        "output=C:\\Users\\cai\\Desktop\\cepstral-model\\ProcessedResult.log "
+        "C=0,1,2,3,4,5,6,7,8,9,10,11,12 "
+        "D=0,1,2,3,4,5,6,7,8,9,10,11,12 "
+        "A=0,1,2,3,4,5,6,7,8,9,10,11,12 "
+        "frames=20"
+    )
+
     silent = "S" in switches
 
-    input_file = get_parameter(parameters, "input", True)
-    output_file = get_parameter(parameters, "output", True)
-    c_list = get_parameter(parameters, "C").split(",")
-    d_list = get_parameter(parameters, "D").split(",")
-    a_list = get_parameter(parameters, "A").split(",")
+    input_file = get_parameter(parameters, "input", True, usage_text)
+    output_file = get_parameter(parameters, "output", True, usage_text)
+    c_list = get_parameter(parameters, "C", usage_text=usage_text).split(",")
+    d_list = get_parameter(parameters, "D", usage_text=usage_text).split(",")
+    a_list = get_parameter(parameters, "A", usage_text=usage_text).split(",")
+    frames = get_parameter(parameters, "frames", usage_text=usage_text)
 
-    return input_file, output_file, c_list, d_list, a_list, silent
+    # set defaults
+    frames = frames if frames != "" else 20 # default of 20
+
+    return silent, input_file, output_file, c_list, d_list, a_list, frames
 
 
 if __name__ == "__main__":
     args = sys.argv
     (switches, parameters, commands) = parse_args(args)
-    (input_file, output_file, c_list, d_list, a_list, silent) = process_args(switches, parameters, commands)
+    (silent, input_file, output_file, c_list, d_list, a_list, frames) = process_args(switches, parameters, commands)
 
-    filter_coefficients(input_file, output_file, c_list, d_list, a_list, silent)
+    filter_coefficients(silent, input_file, output_file, c_list, d_list, a_list, frames)
