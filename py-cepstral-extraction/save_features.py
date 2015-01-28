@@ -7,6 +7,7 @@ import sys
 import re
 
 import scipy
+import scipy.io
 import numpy
 
 from cw_common import *
@@ -36,10 +37,10 @@ def process_args(switches, parameters, commands):
     input_file = get_parameter(parameters, "input", True, usage_text)
     output_filename = get_parameter(parameters, "output", True, usage_text)
 
-    return input_file, output_filename
+    return input_file, output_filename, silent
 
 
-def get_condition_vectors(input_filename):
+def get_condition_vectors(input_filename, silent):
     """
     Expect frames to start at 0 for each condition and to be sequential
     in increments of 1
@@ -85,12 +86,22 @@ def get_condition_vectors(input_filename):
                 # Now we can start on the newly processed label
                 this_condition_label = condition_label_match.group("conditionlabel")
 
+                if not silent:
+                    print("Condition: {0}".format(this_condition_label))
+
             elif feature_vector_match:
 
                 # We've matched a feature vector for a particular frame
 
                 this_frame_id = feature_vector_match.group("frameid")
-                this_condition_vector = feature_vector_match.group("featurevector").split(",")
+                this_condition_vector = [float(x) for x in feature_vector_match.group("featurevector").split(",")]
+
+                if not silent:
+                    print("\tf-{0}:".format(this_frame_id))
+                    i = 1
+                    for feature in this_condition_vector:
+                        print("\t\t[{0}]{1}".format(i, feature))
+                        i += 1
 
                 # If this is the first frame for this condition, we need to
                 # create an array for the condition vector
@@ -108,29 +119,34 @@ def get_condition_vectors(input_filename):
                         numpy.array(this_condition_vector)
                     ))
 
+        # Remember to save what we've got on the last one too.
+        condition_vectors[this_condition_label] = this_condition_array
+
     return condition_vectors
 
 
-def transform_and_save(condition_vectors, output_filename):
+def transform_and_save(output_filename, condition_vectors):
     """
     Will save the following in a Matlab-readable format:
     - A struct with a field named after each condition label, containing frame
       x condition arrays
 
+    :param output_filename:
     :param condition_vectors: a word-keyed dictionary of
                               (frame, condition)-arrays
-    :param output_filename:
-    :param distance:
     """
 
-    scipy.io.savemat(condition_vectors, output_filename, appendmat=False)
+    scipy.io.savemat(output_filename, condition_vectors, appendmat=False)
 
 
 if __name__ == "__main__":
-    args = sys.argv
-    (switches, parameters, commands) = parse_args(args)
-    (input_filename, output_filename) = process_args(switches, parameters, commands)
 
-    condition_vectors = get_condition_vectors(input_filename)
+    with open("{0}.log".format(__file__), mode="w", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
 
-    transform_and_save(condition_vectors, output_filename)
+        args = sys.argv
+        (switches, parameters, commands) = parse_args(args)
+        (input_filename, output_filename, silent) = process_args(switches, parameters, commands)
+
+        condition_vectors = get_condition_vectors(input_filename, silent)
+
+        transform_and_save(output_filename, condition_vectors)

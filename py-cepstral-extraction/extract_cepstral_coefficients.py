@@ -3,65 +3,68 @@
 Extract some cepstral coefficients from HTK's output file.
 """
 
+import sys
 import re
 from cw_common import *
 
 
-def filter_coefficients(silent, input_filename, output_filename, c_list, d_list, a_list, frames):
+def filter_coefficients(input_filename, output_filename, c_list, d_list, a_list, frames, silent, log):
     """
     Main function.
-    :param silent:
     :param input_filename:
     :param output_filename:
     :param c_list:
     :param d_list:
     :param a_list:
+    :param frames:
+    :param silent:
+    :param log: [currently unused]
     """
 
     # Regular expression for name of a word
-    word_name_re = re.compile(r"^-+ Source- (?P<wordname>[a-z]+)\.wav -+$")
+    word_name_re = re.compile(r"^-+ Source: (?P<wordname>[a-z]+)\.wav -+$")
 
     # Regular expression for all coefficients for a given frame
-    frame_vector_re = re.compile((r"^(?P<frameid>[0-9]+): "
-                                  r"(?P<C01>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<C02>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<C03>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<C04>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<C05>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<C06>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<C07>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<C08>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<C09>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<C10>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<C11>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<C12>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<C00>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<D01>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<D02>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<D03>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<D04>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<D05>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<D06>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<D07>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<D08>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<D09>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<D10>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<D11>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<D12>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<D00>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<A01>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<A02>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<A03>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<A04>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<A05>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<A06>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<A07>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<A08>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<A09>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<A10>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<A11>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<A12>-?[0-9]+\.[0-9]+) "
-                                  r"(?P<A00>-?[0-9]+\.[0-9]+)$"))
+    frame_vector_re = re.compile((r"^(?P<frameid>[0-9]+): +"
+                                  r"(?P<C01>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<C02>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<C03>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<C04>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<C05>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<C06>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<C07>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<C08>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<C09>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<C10>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<C11>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<C12>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<C00>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<D01>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<D02>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<D03>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<D04>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<D05>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<D06>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<D07>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<D08>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<D09>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<D10>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<D11>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<D12>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<D00>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<A01>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<A02>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<A03>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<A04>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<A05>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<A06>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<A07>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<A08>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<A09>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<A10>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<A11>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<A12>-?[0-9]+\.[0-9]+) +"
+                                  r"(?P<A00>-?[0-9]+\.[0-9]+) *$"))
 
     c_list_match_names = list(map(lambda c: "C{0}".format(c.zfill(2)), c_list))
     d_list_match_names = list(map(lambda d: "D{0}".format(d.zfill(2)), d_list))
@@ -79,7 +82,7 @@ def filter_coefficients(silent, input_filename, output_filename, c_list, d_list,
                     word_name = word_name_match.group('wordname')
                     output_file.write("{0}\n".format(word_name))
                     if not silent:
-                        print(word_name + "\n")
+                        print(word_name)
 
                 elif frame_vector_match:
                     # Matched a frame vector line
@@ -89,12 +92,15 @@ def filter_coefficients(silent, input_filename, output_filename, c_list, d_list,
                     # Only want to import if the frameid is less than the number of frames requested
                     if int(frame_id) < frames:
                         # Get the requested coefficients
-                        c_coeffs = list(
-                            map(lambda c_match_name: frame_vector_match.group(c_match_name), c_list_match_names))
-                        d_coeffs = list(
-                            map(lambda d_match_name: frame_vector_match.group(d_match_name), d_list_match_names))
-                        a_coeffs = list(
-                            map(lambda a_match_name: frame_vector_match.group(a_match_name), a_list_match_names))
+                        c_coeffs = list(map(lambda c_match_name: frame_vector_match.group(c_match_name), c_list_match_names))
+                        d_coeffs = list(map(lambda d_match_name: frame_vector_match.group(d_match_name), d_list_match_names))
+                        a_coeffs = list(map(lambda a_match_name: frame_vector_match.group(a_match_name), a_list_match_names))
+
+                        # if not silent:
+                        # print("\tf-{0}".format(frame_id))
+                        # print("\t\tc_coefs: {0}".format(c_list_match_names))
+                        # print("\t\td_coefs: {0}".format(d_list_match_names))
+                        #     print("\t\ta_coefs: {0}".format(a_list_match_names))
 
                         line_to_write = ""
                         line_to_write += frame_id
@@ -157,23 +163,35 @@ def process_args(switches, parameters, commands):
     )
 
     silent = "S" in switches
+    log = "l" in switches
 
     input_file = get_parameter(parameters, "input", True, usage_text)
     output_file = get_parameter(parameters, "output", True, usage_text)
     c_list = get_parameter(parameters, "C", usage_text=usage_text).split(",")
     d_list = get_parameter(parameters, "D", usage_text=usage_text).split(",")
     a_list = get_parameter(parameters, "A", usage_text=usage_text).split(",")
+
+    # Correct for empty args
+    if c_list[0] == "":
+        c_list = []
+    if d_list[0] == "":
+        d_list = []
+    if a_list[0] == "":
+        a_list = []
+
     frames = get_parameter(parameters, "frames", usage_text=usage_text)
 
     # set defaults
     frames = frames if frames != "" else 20 # default of 20
 
-    return silent, input_file, output_file, c_list, d_list, a_list, frames
+    return silent, log, input_file, output_file, c_list, d_list, a_list, frames
 
 
 if __name__ == "__main__":
-    args = sys.argv
-    (switches, parameters, commands) = parse_args(args)
-    (silent, input_file, output_file, c_list, d_list, a_list, frames) = process_args(switches, parameters, commands)
+    with open("{0}.log".format(__file__), mode="w", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
 
-    filter_coefficients(silent, input_file, output_file, c_list, d_list, a_list, frames)
+        args = sys.argv
+        (switches, parameters, commands) = parse_args(args)
+        (silent, log, input_file, output_file, c_list, d_list, a_list, frames) = process_args(switches, parameters, commands)
+
+        filter_coefficients(input_file, output_file, c_list, d_list, a_list, frames, silent, log)

@@ -2,6 +2,7 @@
 """
 Common code.
 """
+import sys
 
 
 def parse_args(args):
@@ -76,3 +77,27 @@ class ApplicationError(Exception):
 
     def __str__(self):
         return repr(self.value)
+
+
+class RedirectStdoutTo:
+
+    """
+    For redirecting stdout to a file.
+
+    Use like:
+
+    with open('log.txt', mode="w", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
+        # do stuff here
+
+    :param out_new:
+    """
+
+    def __init__(self, out_new):
+        self.out_new = out_new
+
+    def __enter__(self):
+        self.out_old = sys.stdout
+        sys.stdout = self.out_new
+
+    def __exit__(self, *args):
+        sys.stdout = self.out_old
