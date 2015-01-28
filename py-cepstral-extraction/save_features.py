@@ -25,7 +25,6 @@ def process_args(switches, parameters, commands):
         "python save_features "
         "input=<input-path> "
         "output=<output-directory> "
-        "distance=<distance|Pearson>"
         ""
         "For example:"
         "python cepstral_model_rdms "
@@ -36,9 +35,8 @@ def process_args(switches, parameters, commands):
 
     input_file = get_parameter(parameters, "input", True, usage_text)
     output_filename = get_parameter(parameters, "output", True, usage_text)
-    distance = get_parameter(parameters, "distance", usage_text=usage_text)
 
-    return input_file, output_filename, distance
+    return input_file, output_filename
 
 
 def get_condition_vectors(input_filename):
@@ -113,7 +111,7 @@ def get_condition_vectors(input_filename):
     return condition_vectors
 
 
-def transform_and_save(condition_vectors, output_filename, distance):
+def transform_and_save(condition_vectors, output_filename):
     """
     Will save the following in a Matlab-readable format:
     - A struct with a field named after each condition label, containing frame
@@ -131,8 +129,8 @@ def transform_and_save(condition_vectors, output_filename, distance):
 if __name__ == "__main__":
     args = sys.argv
     (switches, parameters, commands) = parse_args(args)
-    (input_filename, output_filename, distance) = process_args(switches, parameters, commands)
+    (input_filename, output_filename) = process_args(switches, parameters, commands)
 
     condition_vectors = get_condition_vectors(input_filename)
 
-    transform_and_save(condition_vectors, output_filename, distance)
+    transform_and_save(condition_vectors, output_filename)
