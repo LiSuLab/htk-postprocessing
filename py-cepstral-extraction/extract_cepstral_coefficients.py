@@ -7,7 +7,7 @@ import re
 from cw_common import *
 
 
-def filter_coefficients(input_filename, output_filename, c_list, d_list, a_list, silent):
+def filter_coefficients(silent, input_filename, output_filename, c_list, d_list, a_list, frames):
     """
     Main function.
     :param silent:
@@ -84,25 +84,29 @@ def filter_coefficients(input_filename, output_filename, c_list, d_list, a_list,
                 elif frame_vector_match:
                     # Matched a frame vector line
 
-                    # Get the requested coefficients
-                    c_coeffs = list(
-                        map(lambda c_match_name: frame_vector_match.group(c_match_name), c_list_match_names))
-                    d_coeffs = list(
-                        map(lambda d_match_name: frame_vector_match.group(d_match_name), d_list_match_names))
-                    a_coeffs = list(
-                        map(lambda a_match_name: frame_vector_match.group(a_match_name), a_list_match_names))
+                    frame_id = frame_vector_match.group("frameid")
 
-                    line_to_write = ""
-                    line_to_write += frame_vector_match.group("frameid")
-                    line_to_write += ":"
-                    for coeff in c_coeffs + d_coeffs + a_coeffs:
-                        line_to_write += coeff
-                        line_to_write += ","
-                    # remove trailing comma
-                    line_to_write = line_to_write[:-1]
-                    line_to_write += "\n"
+                    # Only want to import if the frameid is less than the number of frames requested
+                    if int(frame_id) < frames:
+                        # Get the requested coefficients
+                        c_coeffs = list(
+                            map(lambda c_match_name: frame_vector_match.group(c_match_name), c_list_match_names))
+                        d_coeffs = list(
+                            map(lambda d_match_name: frame_vector_match.group(d_match_name), d_list_match_names))
+                        a_coeffs = list(
+                            map(lambda a_match_name: frame_vector_match.group(a_match_name), a_list_match_names))
 
-                    output_file.write(line_to_write)
+                        line_to_write = ""
+                        line_to_write += frame_id
+                        line_to_write += ":"
+                        for coeff in c_coeffs + d_coeffs + a_coeffs:
+                            line_to_write += coeff
+                            line_to_write += ","
+                        # remove trailing comma
+                        line_to_write = line_to_write[:-1]
+                        line_to_write += "\n"
+
+                        output_file.write(line_to_write)
 
 
 def get_parameter(parameters, param_name, required=False, usage_text=None):
@@ -173,5 +177,3 @@ if __name__ == "__main__":
     (silent, input_file, output_file, c_list, d_list, a_list, frames) = process_args(switches, parameters, commands)
 
     filter_coefficients(silent, input_file, output_file, c_list, d_list, a_list, frames)
-
-    # todo: cap at 200 ms (user-settable)
