@@ -1,4 +1,7 @@
-import sys
+# coding=utf-8
+"""
+Common code.
+"""
 
 
 def parse_args(args):
@@ -60,3 +63,16 @@ def get_parameter(parameters, param_name, required=False, usage_text=None):
         return ""
     return param
 
+
+class ApplicationError(Exception):
+    """
+    Represents an error in which the executing code is in a logically invalid
+    state. This means that a programmer error has occurred.
+    :param value:
+    """
+
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)

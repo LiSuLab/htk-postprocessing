@@ -3,8 +3,11 @@
 Assumes a fixed number of frames for each condition.
 """
 
+import sys
 import re
-from collections import defaultdict # for dict2
+
+import scipy
+import numpy
 
 from cw_common import *
 
@@ -21,93 +24,108 @@ def process_args(switches, parameters, commands):
     usage_text = (
         "python save_features "
         "input=<input-path> "
-        "output=<output-path> "
-        "distance=<distance>"
+        "output=<output-directory> "
+        "distance=<distance|Pearson>"
         ""
         "For example:"
         "python cepstral_model_rdms "
         "input=C:\\Users\\cai\\Desktop\\cepstral-model\\ProcessedResult.log "
-        "output=C:\\Users\\cai\\Desktop\\cepstral-model\\RDMs.mat "
-        "distance=Pearson"
+        "output=C:\\Users\\cai\\Desktop\\cepstral-model\\Features.mat "
     )
     silent = "S" in switches
 
     input_file = get_parameter(parameters, "input", True, usage_text)
-    output_file = get_parameter(parameters, "output", True, usage_text)
+    output_filename = get_parameter(parameters, "output", True, usage_text)
     distance = get_parameter(parameters, "distance", usage_text=usage_text)
 
-    return input_file, output_file, distance
+    return input_file, output_filename, distance
 
 
 def get_condition_vectors(input_filename):
     """
+    Expect frames to start at 0 for each condition and to be sequential
+    in increments of 1
 
     :param input_filename:
-    :return condition_vectors: a (frame,word)-keyed dictionary of condition vectors
-    :return condition_ids: a dictionary of ints, indexed by condition labels.
-    :return condition_labels: a dictionary of condition labels, indexed by ints.
+    :return condition_vectors: a word-keyed dictionary of
+            (frame, condition)-arrays
+    :return condition_labels: a dictionary of ints, indexed by condition
+            labels.
     """
     condition_label_re = re.compile(r"^(?P<conditionlabel>[a-z]+)$")
     feature_vector_re = re.compile(r"^(?P<frameid>[0-9]+):(?P<featurevector>.*)$")
 
-    condition_vectors = defaultdict(dict)
-    condition_ids = dict()
-    condition_labels = dict()
-    this_condition_id = 0
-    frames = 0
+    condition_vectors = dict()
+
+    this_condition_label = None
+
+    # Defaults
+    this_condition_array = None
 
     with open(input_filename, encoding="utf-8") as input_file:
 
-        this_condition_label = None
-        this_frame_id = None
-        this_condition_vector = None
-
         for line in input_file:
 
+            # Possible matches
             condition_label_match = condition_label_re.match(line)
             feature_vector_match = feature_vector_re.match(line)
 
+            # The line we've read can match either condition labels
+            # or feature vectors for a particular frame
             if condition_label_match:
+
                 # We've matched a new condition label
 
-                # If there's a condition that's already been processed, remember what we've got so far
+                # If there's a condition that's already been processed,
+                # we should remember what we've got so far
                 if this_condition_label is not None:
-                    condition_vectors[this_condition_label] = {
-                        this_frame_id: this_condition_vector
-                    }
-
-                this_condition_label = condition_label_match.group("conditionlabel")
-
-                # Add this condition to the dictionaries
-                this_condition_id += 1
-                condition_ids[this_condition_label] = this_condition_id
-                condition_labels[this_condition_id] = this_condition_label
+                    condition_vectors[this_condition_label] = this_condition_array
 
                 # Reset defaults
-                this_condition_vector = None
-                this_frame_id = None
+                this_condition_array = None
+
+                # Now we can start on the newly processed label
+                this_condition_label = condition_label_match.group("conditionlabel")
 
             elif feature_vector_match:
+
+                # We've matched a feature vector for a particular frame
+
                 this_frame_id = feature_vector_match.group("frameid")
                 this_condition_vector = feature_vector_match.group("featurevector").split(",")
 
-                # add to dictionary
-                condition_vectors[this_frame_id, this_condition_label] = this_condition_vector
+                # If this is the first frame for this condition, we need to
+                # create an array for the condition vector
+                if this_condition_array is None:
+                    this_condition_array = numpy.array(this_condition_vector)
 
-                # keep count of frames
-                # todo ugh this is not too robust
-                frames = max(frames, int(this_frame_id))
+                # Otherwise we need to append the current list to the array
+                else:
+                    # Just quick sanity check
+                    if this_frame_id == "0" or this_frame_id is None:
+                        raise ApplicationError("Wasn't expecting the first frame to be here")
 
-    return condition_vectors, condition_ids, condition_labels, frames
+                    this_condition_array = numpy.vstack((
+                        this_condition_array,
+                        numpy.array(this_condition_vector)
+                    ))
+
+    return condition_vectors
 
 
-def transform_and_save(condition_vectors, condition_ids, condition_labels, output_filename, frames, distance):
-    with open(output_filename, mode="w", encoding="utf-8") as output_file:
-        # We'll create a separate RDM for each frame
-        for frame in frames:
-            # We fill a single cell for each
+def transform_and_save(condition_vectors, output_filename, distance):
+    """
+    Will save the following in a Matlab-readable format:
+    - A struct with a field named after each condition label, containing frame
+      x condition arrays
 
+    :param condition_vectors: a word-keyed dictionary of
+                              (frame, condition)-arrays
+    :param output_filename:
+    :param distance:
+    """
 
+    scipy.io.savemat(condition_vectors, output_filename, appendmat=False)
 
 
 if __name__ == "__main__":
@@ -115,6 +133,6 @@ if __name__ == "__main__":
     (switches, parameters, commands) = parse_args(args)
     (input_filename, output_filename, distance) = process_args(switches, parameters, commands)
 
-    (condition_vectors, condition_ids, condition_labels, frames) = get_condition_vectors(input_filename)
+    condition_vectors = get_condition_vectors(input_filename)
 
-    transform_and_save(condition_vectors, condition_ids, condition_labels, output_filename, frames, distance)
+    transform_and_save(condition_vectors, output_filename, distance)
