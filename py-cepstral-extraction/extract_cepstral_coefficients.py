@@ -3,9 +3,8 @@
 Extract some cepstral coefficients from HTK's output file.
 """
 
-import sys
 import re
-from cw_common import parse_args
+from cw_common import *
 
 
 def filter_coefficients(input_filename, output_filename, c_list, d_list, a_list, silent):
@@ -106,14 +105,33 @@ def filter_coefficients(input_filename, output_filename, c_list, d_list, a_list,
                     output_file.write(line_to_write)
 
 
-
-def get_parameter(parameters, param_name, required=False):
+def get_parameter(parameters, param_name, required=False, usage_text=None):
     """
     Gets parameters from a parameter list
     :param parameters:
     :param param_name:
     :param required:
+    :param usage_text:
     :return: :raise ValueError:
+    """
+    if param_name in parameters:
+        param = parameters[param_name]
+    elif required:
+        if usage_text is not None: print(usage_text)
+        raise ValueError("Require {0} parameter.".format(param_name))
+    else:
+        return ""
+    return param
+
+
+# noinspection PyUnusedLocal
+def process_args(switches, parameters, commands):
+    """
+    Gets relevant info from switches, parameters and commands
+    :param switches:
+    :param parameters:
+    :param commands:
+    :return:
     """
     usage_text = (
         "python extract_cepstral_coefficients "
@@ -131,32 +149,14 @@ def get_parameter(parameters, param_name, required=False):
         "D=0,1,2,3,4,5,6,7,8,9,10,11,12 "
         "A=0,1,2,3,4,5,6,7,8,9,10,11,12"
     )
-    if param_name in parameters:
-        param = parameters[param_name]
-    elif required:
-        print(usage_text)
-        raise ValueError("Require {0} parameter.".format(param_name))
-    else:
-        return ""
-    return param
 
-
-# noinspection PyUnusedLocal
-def process_args(switches, parameters, commands):
-    """
-    Gets relevant info from switches, parameters and commands
-    :param switches:
-    :param parameters:
-    :param commands:
-    :return:
-    """
     silent = "S" in switches
 
-    input_file = get_parameter(parameters, "input", True)
-    output_file = get_parameter(parameters, "output", True)
-    c_list = get_parameter(parameters, "C").split(",")
-    d_list = get_parameter(parameters, "D").split(",")
-    a_list = get_parameter(parameters, "A").split(",")
+    input_file = get_parameter(parameters, "input", True, usage_text)
+    output_file = get_parameter(parameters, "output", True, usage_text)
+    c_list = get_parameter(parameters, "C", usage_text=usage_text).split(",")
+    d_list = get_parameter(parameters, "D", usage_text=usage_text).split(",")
+    a_list = get_parameter(parameters, "A", usage_text=usage_text).split(",")
 
     return input_file, output_file, c_list, d_list, a_list, silent
 

@@ -39,3 +39,24 @@ def parse_args(args):
     ]
 
     return switches, parameters, commands
+
+
+def get_parameter(parameters, param_name, required=False, usage_text=None):
+    """
+    Gets parameters from a parameter list
+    :param parameters:
+    :param param_name:
+    :param required:
+    :param usage_text:
+    :return: :raise ValueError:
+    """
+    if param_name in parameters:
+        param = parameters[param_name]
+    elif required:
+        if usage_text is not None:
+            print(usage_text)
+        raise ValueError("Require {0} parameter.".format(param_name))
+    else:
+        return ""
+    return param
+

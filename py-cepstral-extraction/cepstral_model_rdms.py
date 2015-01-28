@@ -3,16 +3,17 @@
 import sys
 import re
 import scipy.io
-from cw_common import parse_args
+from cw_common import *
 
-# todo refactor this out of here and extract_cepstral_coefficients.py
-def get_parameter(parameters, param_name, required=False):
+
+# noinspection PyUnusedLocal
+def process_args(switches, parameters, commands):
     """
-    Gets parameters from a parameter list
+    Gets relevant info from switches, parameters and commands
+    :param switches:
     :param parameters:
-    :param param_name:
-    :param required:
-    :return: :raise ValueError:
+    :param commands:
+    :return:
     """
     usage_text = (
         "python cepstral_model_rdms "
@@ -26,36 +27,16 @@ def get_parameter(parameters, param_name, required=False):
         "output=C:\\Users\\cai\\Desktop\\cepstral-model\\RDMs.mat "
         "distance=Pearson"
     )
-    if param_name in parameters:
-        param = parameters[param_name]
-    elif required:
-        print(usage_text)
-        raise ValueError("Require {0} parameter.".format(param_name))
-    else:
-        return ""
-    return param
-
-
-# noinspection PyUnusedLocal
-def process_args(switches, parameters, commands):
-    """
-    Gets relevant info from switches, parameters and commands
-    :param switches:
-    :param parameters:
-    :param commands:
-    :return:
-    """
     silent = "S" in switches
 
-    input_file = get_parameter(parameters, "input", True)
-    output_file = get_parameter(parameters, "output", True)
-    distance = get_parameter(parameters, "distance")
+    input_file = get_parameter(parameters, "input", True, usage_text)
+    output_file = get_parameter(parameters, "output", True, usage_text)
+    distance = get_parameter(parameters, "distance", usage_text=usage_text)
 
     return input_file, output_file, distance
 
 
 def get_condition_vectors(input_filename, output_filename):
-
     condition_label_re = re.compile(r"^(?P<conditionlabel>[a-z]+)$")
     feature_vector_re = re.compile(r"^(?P<frameid>[0-9]+):(?P<featurevector>.*)$")
 
@@ -91,7 +72,6 @@ def get_condition_vectors(input_filename, output_filename):
                     this_condition_vector = feature_vector_match.group("featurevector").split(",")
 
     return condition_vectors
-
 
 
 if __name__ == "__main__":
