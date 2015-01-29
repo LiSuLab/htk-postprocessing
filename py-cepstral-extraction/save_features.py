@@ -30,17 +30,19 @@ def process_args(switches, parameters, commands):
         "For example:"
         "python cepstral_model_rdms "
         "input=C:\\Users\\cai\\Desktop\\cepstral-model\\ProcessedResult.log "
+        "words=C:\\Users\\cai\\Desktop\\cepstral-model\\Stimuli-Lexpro-MEG-Single-col.txt "
         "output=C:\\Users\\cai\\Desktop\\cepstral-model\\Features.mat "
     )
     silent = "S" in switches
 
-    input_file = get_parameter(parameters, "input", True, usage_text)
+    input_filename = get_parameter(parameters, "input", True, usage_text)
     output_filename = get_parameter(parameters, "output", True, usage_text)
+    words_filename = get_parameter(parameters, "words", True, usage_text)
 
-    return input_file, output_filename, silent
+    return input_filename, words_filename, output_filename, silent
 
 
-def get_condition_vectors(input_filename, silent):
+def get_condition_vectors(input_filename, word_list, silent):
     """
     Expect frames to start at 0 for each condition and to be sequential
     in increments of 1
@@ -55,7 +57,6 @@ def get_condition_vectors(input_filename, silent):
     feature_vector_re = re.compile(r"^(?P<frameid>[0-9]+):(?P<featurevector>.*)$")
 
     condition_vectors = dict()
-
     this_condition_label = None
 
     # Defaults
@@ -77,7 +78,9 @@ def get_condition_vectors(input_filename, silent):
 
                 # If there's a condition that's already been processed,
                 # we should remember what we've got so far
-                if this_condition_label is not None:
+                # BUT we only need to do this if it's on the approved word
+                # list!
+                if (this_condition_label is not None) and (this_condition_label in word_list):
                     condition_vectors[this_condition_label] = this_condition_array
 
                 # Reset defaults
@@ -120,7 +123,9 @@ def get_condition_vectors(input_filename, silent):
                     ))
 
         # Remember to save what we've got on the last one too.
-        condition_vectors[this_condition_label] = this_condition_array
+        # We only need to do this if it's on the approved word list!
+        if this_condition_label in word_list:
+            condition_vectors[this_condition_label] = this_condition_array
 
     return condition_vectors
 
@@ -139,13 +144,27 @@ def transform_and_save(output_filename, condition_vectors):
     scipy.io.savemat(output_filename, condition_vectors, appendmat=False)
 
 
+def get_words(words_filename):
+    """
+    Reads a list of words from a text file.
+    :param words_filename:
+    :return:
+    """
+    with open(words_filename, encoding="utf-8") as words_file:
+        lines = words_file.readlines()
+        # Don't want the newlines at the end
+        return [line.rstrip("\n") for line in lines]
+
+
 def main(argv):
     with open("{0}.log".format(__file__), mode="w", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
 
         (switches, parameters, commands) = parse_args(argv)
-        (input_filename, output_filename, silent) = process_args(switches, parameters, commands)
+        (input_filename, words_file, output_filename, silent) = process_args(switches, parameters, commands)
 
-        condition_vectors = get_condition_vectors(input_filename, silent)
+        word_list = get_words(words_file)
+
+        condition_vectors = get_condition_vectors(input_filename, word_list, silent)
 
         transform_and_save(output_filename, condition_vectors)
 

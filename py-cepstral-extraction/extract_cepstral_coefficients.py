@@ -147,6 +147,7 @@ def process_args(switches, parameters, commands):
         "python extract_cepstral_coefficients "
         "input=<input-path> "
         "output=<output-path> "
+        "words=<word-list-path>"
         "C=<CC-list> "
         "D=<DC-list> "
         "A=<AC-list> "
@@ -192,7 +193,6 @@ def main(argv):
 
         (switches, parameters, commands) = parse_args(argv)
         (silent, log, input_file, output_file, c_list, d_list, a_list, frames) = process_args(switches, parameters, commands)
-
         filter_coefficients(input_file, output_file, c_list, d_list, a_list, frames, silent, log)
 
 if __name__ == "__main__":
