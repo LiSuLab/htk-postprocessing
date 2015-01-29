@@ -139,14 +139,16 @@ def transform_and_save(output_filename, condition_vectors):
     scipy.io.savemat(output_filename, condition_vectors, appendmat=False)
 
 
-if __name__ == "__main__":
-
+def main(argv):
     with open("{0}.log".format(__file__), mode="w", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
 
-        args = sys.argv
-        (switches, parameters, commands) = parse_args(args)
+        (switches, parameters, commands) = parse_args(argv)
         (input_filename, output_filename, silent) = process_args(switches, parameters, commands)
 
         condition_vectors = get_condition_vectors(input_filename, silent)
 
         transform_and_save(output_filename, condition_vectors)
+
+
+if __name__ == "__main__":
+    main(sys.argv)

@@ -187,11 +187,13 @@ def process_args(switches, parameters, commands):
     return silent, log, input_file, output_file, c_list, d_list, a_list, frames
 
 
-if __name__ == "__main__":
+def main(argv):
     with open("{0}.log".format(__file__), mode="w", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
 
-        args = sys.argv
-        (switches, parameters, commands) = parse_args(args)
+        (switches, parameters, commands) = parse_args(argv)
         (silent, log, input_file, output_file, c_list, d_list, a_list, frames) = process_args(switches, parameters, commands)
 
         filter_coefficients(input_file, output_file, c_list, d_list, a_list, frames, silent, log)
+
+if __name__ == "__main__":
+    main(sys.argv)
