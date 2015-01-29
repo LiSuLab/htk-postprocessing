@@ -29,4 +29,6 @@ end
 
 %% Display RDMs
 
-showRDMs(RDMs_per_frame(:,:,1));
+for rdm_i = 1:size(RDMs_per_frame, 3)
+    showRDMs(RDMs_per_frame(:,:,rdm_i), rdm_i ,true, [], true, 2/3, [], 'Jet');
+end
