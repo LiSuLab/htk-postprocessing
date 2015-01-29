@@ -3,7 +3,6 @@
 Assumes a fixed number of frames for each condition.
 """
 
-import sys
 import re
 
 import scipy
@@ -29,9 +28,9 @@ def process_args(switches, parameters, commands):
         ""
         "For example:"
         "python cepstral_model_rdms "
-        "input=C:\\Users\\cai\\Desktop\\cepstral-model\\ProcessedResult.log "
-        "words=C:\\Users\\cai\\Desktop\\cepstral-model\\Stimuli-Lexpro-MEG-Single-col.txt "
-        "output=C:\\Users\\cai\\Desktop\\cepstral-model\\Features.mat "
+        "input=C:\\Users\\cai\\code\\cepstral-model\\ProcessedResult.log "
+        "words=C:\\Users\\cai\\code\\cepstral-model\\Stimuli-Lexpro-MEG-Single-col.txt "
+        "output=C:\\Users\\cai\\code\\cepstral-model\\Features.mat "
     )
     silent = "S" in switches
 
@@ -48,6 +47,8 @@ def get_condition_vectors(input_filename, word_list, silent):
     in increments of 1
 
     :param input_filename:
+    :param word_list:
+    :param silent:
     :return condition_vectors: a word-keyed dictionary of
             (frame, condition)-arrays
     :return condition_labels: a dictionary of ints, indexed by condition
@@ -90,7 +91,7 @@ def get_condition_vectors(input_filename, word_list, silent):
                 this_condition_label = condition_label_match.group("conditionlabel")
 
                 if not silent:
-                    print("Condition: {0}".format(this_condition_label))
+                    prints("Condition: {0}".format(this_condition_label))
 
             elif feature_vector_match:
 
@@ -100,10 +101,10 @@ def get_condition_vectors(input_filename, word_list, silent):
                 this_condition_vector = [float(x) for x in feature_vector_match.group("featurevector").split(",")]
 
                 if not silent:
-                    print("\tf-{0}:".format(this_frame_id))
+                    prints("\tf-{0}:".format(this_frame_id))
                     i = 1
                     for feature in this_condition_vector:
-                        print("\t\t[{0}]{1}".format(i, feature))
+                        prints("\t\t[{0}]{1}".format(i, feature))
                         i += 1
 
                 # If this is the first frame for this condition, we need to
@@ -157,17 +158,15 @@ def get_words(words_filename):
 
 
 def main(argv):
-    with open("{0}.log".format(__file__), mode="w", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
+    (switches, parameters, commands) = parse_args(argv)
+    (input_filename, words_file, output_filename, silent) = process_args(switches, parameters, commands)
 
-        (switches, parameters, commands) = parse_args(argv)
-        (input_filename, words_file, output_filename, silent) = process_args(switches, parameters, commands)
+    word_list = get_words(words_file)
 
-        word_list = get_words(words_file)
+    condition_vectors = get_condition_vectors(input_filename, word_list, silent)
 
-        condition_vectors = get_condition_vectors(input_filename, word_list, silent)
-
-        transform_and_save(output_filename, condition_vectors)
-
+    transform_and_save(output_filename, condition_vectors)
 
 if __name__ == "__main__":
-    main(sys.argv)
+    with open(get_log_filename(__file__), mode="a", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
+        main(sys.argv)

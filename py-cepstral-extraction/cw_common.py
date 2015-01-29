@@ -2,7 +2,9 @@
 """
 Common code.
 """
+import os
 import sys
+from datetime import datetime
 
 
 def parse_args(args):
@@ -65,6 +67,36 @@ def get_parameter(parameters, param_name, required=False, usage_text=None):
     return param
 
 
+def get_log_filename(filepath):
+    """
+    Generates a log file path from a given file path.
+    :param filepath:
+    :return:
+    """
+    (log_dirname, log_filename) = os.path.split(filepath)
+    log_filename = "{date}-{filename}.log".format(date=datetime.now().strftime("%Y-%m-%d"), filename=log_filename)
+    log_filename = os.path.join(log_dirname, log_filename)
+    return log_filename
+
+
+def prints(*args, sep=' ', end='\n', file=None):
+    """
+    print(value, ..., sep=' ', end='\n', file=sys.stdout, flush=False)
+
+    Prints the values to a stream, or to sys.stdout by default.
+
+    Attaches a local timestamp to the start of the output.
+
+    Optional keyword arguments:
+    file:  a file-like object (stream); defaults to the current sys.stdout.
+    sep:   string inserted between values, default a space.
+    end:   string appended after the last value, default a newline.
+    flush: whether to forcibly flush the stream.
+    """
+    timestamp = "[{0}]".format(datetime.now())
+    print(timestamp, *args, sep=sep, end=end, file=file)
+
+
 class ApplicationError(Exception):
     """
     Represents an error in which the executing code is in a logically invalid
@@ -79,10 +111,24 @@ class ApplicationError(Exception):
         return repr(self.value)
 
 
+class InvalidOperationError(Exception):
+    """
+    Represents an error in which the operation is invalid given the state of things.
+    :param value:
+    """
+
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
+
+
 class RedirectStdoutTo:
 
     """
     For redirecting stdout to a file.
+    Copied from Dive Into Python.
 
     Use like:
 
@@ -101,3 +147,7 @@ class RedirectStdoutTo:
 
     def __exit__(self, *args):
         sys.stdout = self.out_old
+
+
+if __name__ == "__main__":
+    raise InvalidOperationError("Library code shouldn't be run directly.")

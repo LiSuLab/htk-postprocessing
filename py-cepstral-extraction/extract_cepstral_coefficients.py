@@ -3,8 +3,8 @@
 Extract some cepstral coefficients from HTK's output file.
 """
 
-import sys
 import re
+
 from cw_common import *
 
 
@@ -82,7 +82,7 @@ def filter_coefficients(input_filename, output_filename, c_list, d_list, a_list,
                     word_name = word_name_match.group('wordname')
                     output_file.write("{0}\n".format(word_name))
                     if not silent:
-                        print(word_name)
+                        prints(word_name)
 
                 elif frame_vector_match:
                     # Matched a frame vector line
@@ -96,12 +96,6 @@ def filter_coefficients(input_filename, output_filename, c_list, d_list, a_list,
                         d_coeffs = list(map(lambda d_match_name: frame_vector_match.group(d_match_name), d_list_match_names))
                         a_coeffs = list(map(lambda a_match_name: frame_vector_match.group(a_match_name), a_list_match_names))
 
-                        # if not silent:
-                        # print("\tf-{0}".format(frame_id))
-                        # print("\t\tc_coefs: {0}".format(c_list_match_names))
-                        # print("\t\td_coefs: {0}".format(d_list_match_names))
-                        #     print("\t\ta_coefs: {0}".format(a_list_match_names))
-
                         line_to_write = ""
                         line_to_write += frame_id
                         line_to_write += ":"
@@ -113,26 +107,6 @@ def filter_coefficients(input_filename, output_filename, c_list, d_list, a_list,
                         line_to_write += "\n"
 
                         output_file.write(line_to_write)
-
-
-def get_parameter(parameters, param_name, required=False, usage_text=None):
-    """
-    Gets parameters from a parameter list
-    :param parameters:
-    :param param_name:
-    :param required:
-    :param usage_text:
-    :return: :raise ValueError:
-    """
-    if param_name in parameters:
-        param = parameters[param_name]
-    elif required:
-        if usage_text is not None: print(usage_text)
-        raise ValueError("Require {0} parameter.".format(param_name))
-    else:
-        return ""
-    return param
-
 
 # noinspection PyUnusedLocal
 def process_args(switches, parameters, commands):
@@ -155,8 +129,8 @@ def process_args(switches, parameters, commands):
         ""
         "For example:"
         "python extract_cepstral_coefficients "
-        "input=C:\\Users\\cai\\Desktop\\cepstral-model\\HLIST39cepstral.pre.out "
-        "output=C:\\Users\\cai\\Desktop\\cepstral-model\\ProcessedResult.log "
+        "input=C:\\Users\\cai\\code\\cepstral-model\\HLIST39cepstral.pre.out "
+        "output=C:\\Users\\cai\\code\\cepstral-model\\ProcessedResult.log "
         "C=0,1,2,3,4,5,6,7,8,9,10,11,12 "
         "D=0,1,2,3,4,5,6,7,8,9,10,11,12 "
         "A=0,1,2,3,4,5,6,7,8,9,10,11,12 "
@@ -189,11 +163,10 @@ def process_args(switches, parameters, commands):
 
 
 def main(argv):
-    with open("{0}.log".format(__file__), mode="w", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
-
-        (switches, parameters, commands) = parse_args(argv)
-        (silent, log, input_file, output_file, c_list, d_list, a_list, frames) = process_args(switches, parameters, commands)
-        filter_coefficients(input_file, output_file, c_list, d_list, a_list, frames, silent, log)
+    (switches, parameters, commands) = parse_args(argv)
+    (silent, log, input_file, output_file, c_list, d_list, a_list, frames) = process_args(switches, parameters, commands)
+    filter_coefficients(input_file, output_file, c_list, d_list, a_list, frames, silent, log)
 
 if __name__ == "__main__":
-    main(sys.argv)
+   with open(get_log_filename(__file__), mode="a", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
+        main(sys.argv)
