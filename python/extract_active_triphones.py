@@ -60,9 +60,16 @@ def get_triphone_lists(input_filename, frames, silent):
                 current_word_data = dict()
 
             elif active_triphone_frame_match:
-                # TODO: only need to do this if we're under the frame cap!
                 # We've matched the list of active triphones for a given frame.
                 frame_id = active_triphone_frame_match.group('frameid')
+
+                # If the frame_id we've extracted is larger than our
+                # user-specified cap, we can skip this one.
+                if int(frame_id) >= frames:
+                    continue
+
+                # Otherwise continue to break down the list of triphones which
+                # my regular expression wasn't smart enough to get individually
                 triphone_list = active_triphone_frame_match.group('triphonelist').split(' ')
 
                 # We add what we've got to the current word's data
