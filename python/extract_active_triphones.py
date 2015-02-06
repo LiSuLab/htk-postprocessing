@@ -126,6 +126,8 @@ def apply_active_triphone_model(words_data, word_list, frame_cap):
     So to be returned is a phone-keyed dictionary of frame_id-keyed
     dictionaries of word-keyed dictionaries of counts
 
+    :param frame_cap:
+    :param word_list:
     :param words_data:
     """
     phone_list = ["sil", "sp", "ax", "k", "ao", "d", "ia", "n", "ae", "r", "b", "t", "ea", "p", "l", "ey", "ih", "g", "m", "y", "uh", "s", "ng", "aa", "ow", "sh", "eh", "zh", "iy", "v", "ch", "jh", "ay", "uw", "th", "z", "hh", "er", "oh", "ah", "aw", "oy", "dh", "f", "ua", "w"]
@@ -160,14 +162,21 @@ def apply_active_triphone_model(words_data, word_list, frame_cap):
     return phones_data
 
 
-
 def get_word_list(wordlist_filename):
+    """
+    Returns a list of all the (newline-separated) words in the wordlist file.
+    :param wordlist_filename:
+    """
     with open(wordlist_filename, encoding="utf-8") as word_list_file:
         for word in word_list_file:
             yield word
 
 
 def main(argv):
+    """
+    Do dat analysis.
+    :param argv:
+    """
     (switches, parameters, commands) = parse_args(argv)
     (silent, log, input_filename, output_file, wordlist_filename, frame_cap) = process_args(switches, parameters, commands)
     word_list = get_word_list(wordlist_filename)
