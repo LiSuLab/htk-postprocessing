@@ -5,6 +5,9 @@ Extract some cepstral coefficients from HTK's output file.
 
 import re
 
+import scipy
+import scipy.io
+
 from cw_common import *
 
 
@@ -172,16 +175,30 @@ def get_word_list(wordlist_filename):
             yield word
 
 
+def save_features(phones_data, output_filename):
+    """
+    Saves the data in a Matlab-readable format.
+    This will be a phone-keyed dictionary of
+    :param phones_data:
+    :param output_filename:
+    """
+    scipy.io.savemat(output_filename, phones_data, appendmat=False)
+    # for phone, frames_data in phones_data:
+    #     for frame_id, words_data in frames_data:
+    #         for word, count in words_data:
+
+
 def main(argv):
     """
     Do dat analysis.
     :param argv:
     """
     (switches, parameters, commands) = parse_args(argv)
-    (silent, log, input_filename, output_file, wordlist_filename, frame_cap) = process_args(switches, parameters, commands)
+    (silent, log, input_filename, output_filename, wordlist_filename, frame_cap) = process_args(switches, parameters, commands)
     word_list = get_word_list(wordlist_filename)
     word_data = get_triphone_lists(input_filename, frame_cap, silent)
     phones_data = apply_active_triphone_model(word_data, word_list, frame_cap)
+    save_features(phones_data, output_filename)
 
 if __name__ == "__main__":
    with open(get_log_filename(__file__), mode="a", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
