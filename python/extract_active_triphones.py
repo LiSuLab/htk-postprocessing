@@ -59,6 +59,10 @@ def get_triphone_lists(input_filename, frame_cap, silent):
                 current_word = word_name
                 current_word_data = dict()
 
+                # Feedback
+                if not silent:
+                    prints(word_name)
+
             elif active_triphone_frame_match:
                 # We've matched the list of active triphones for a given frame.
                 frame_id = active_triphone_frame_match.group('frameid')
