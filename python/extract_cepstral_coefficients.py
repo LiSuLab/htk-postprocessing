@@ -123,7 +123,7 @@ def filter_coefficients_from_htk(input_filename, word_list, c_list, d_list, a_li
                 # Get the requested coefficients
                 for coeff_name in all_coeff_names:
                     this_coeff = frame_vector_match.group(coeff_name)
-                    coeffs[coeff_name][this_word][frame] = this_coeff
+                    coeffs[coeff_name][this_word][frame] = float(this_coeff)
     return coeffs
 
 def transform_and_save(output_dirname, coeffs):
