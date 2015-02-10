@@ -48,7 +48,7 @@ n_frames = length(coeffs.(coeff_names{file_i}).(word_list{1}));
 % Frames per window
 fw = 3;
 
-n_windows = n_frames / fw;
+n_windows = n_frames - fw + 1;
 
 for window_i = 1 : n_windows
     
@@ -61,15 +61,10 @@ for window_i = 1 : n_windows
         % Preallocate the feature matrix
         this_feature_matrix = nan(length(word_list), fw);
         
-        % Iterate over frame per window
-        for frame_i = 1 : fw
-            this_frame = ((window_i - 1) * fw) + frame_i;
-            
-            % Iterate over words
-            for word_i = 1 : length(word_list)
-                this_word = word_list{word_i};
-                this_feature_matrix(word_i, this_frame) = coeffs.(this_coeff).(this_word)(this_frame);
-            end%for
+        % Iterate over words
+        for word_i = 1 : length(word_list)
+            this_word = word_list{word_i};
+            this_feature_matrix(word_i, :) = coeffs.(this_coeff).(this_word)(window_i:window_i + fw - 1);
         end%for
         
         %% Calculate the RDM
@@ -89,8 +84,5 @@ for window_i = 1 : n_windows
         showRDMs(RDMs_this_frame, window_i, false, [], false, 3/4, [], 'Jet');
         handleCurrentFigure(fullfile(figures_dir, sprintf('window%02d', window_i)), userOptions);
     end%for
-    
-    showRDMs(RDMs_this_frame, window_i, false, [], false, 3/4, [], 'Jet');
-    handleCurrentFigure(fullfile(figures_dir, sprintf('window%02d', window_i)), userOptions);
     
 end%for
