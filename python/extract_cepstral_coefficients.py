@@ -4,7 +4,6 @@ Extract some cepstral coefficients from HTK's output file.
 """
 
 import re
-import numpy
 import scipy
 import scipy.io
 
@@ -139,7 +138,6 @@ def transform_and_save(output_dirname, coeffs):
     for coeff_name in coeffs.keys():
         file_name = "cepstral-coefficients-{0}.mat".format(coeff_name)
         save_path = os.path.join(output_dirname, file_name)
-        # todo does this need to be an array?
         scipy.io.savemat(save_path, coeffs[coeff_name], appendmat=False)
 
 
