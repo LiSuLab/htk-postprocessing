@@ -263,6 +263,12 @@ def process_args(switches, parameters, commands):
     if a_list[0] == "":
         a_list = []
 
+    # But if they're all empty, we have defaults
+    if c_list[0] == "" and d_list[0] == "" and a_list[0] == "":
+        c_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        d_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        a_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
     frames = get_parameter(parameters, "frames", usage_text=usage_text)
 
     # set defaults
@@ -272,6 +278,10 @@ def process_args(switches, parameters, commands):
 
 
 def main(argv):
+    """
+    Run the analysis
+    :param argv:
+    """
     (switches, parameters, commands) = parse_args(argv)
     (silent, input_file, output_file, c_list, d_list, a_list, frames) = process_args(switches, parameters, commands)
     filter_coefficients(input_file, output_file, c_list, d_list, a_list, frames, silent)
