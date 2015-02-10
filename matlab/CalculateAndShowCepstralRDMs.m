@@ -69,8 +69,10 @@ for window_i = 1 : n_windows
             this_word = word_list{word_i};
             this_feature_matrix(word_i, :) = coeffs.(this_coeff).(this_word)(window_i:window_i + fw - 1);
         end%for
-        
+    
+
         %% Calculate the RDM
+    
         this_RDM = pdist(this_feature_matrix, 'Correlation');
         this_RDM = scale01(tiedrank(this_RDM));
         this_RDM = squareform(this_RDM);
@@ -78,12 +80,18 @@ for window_i = 1 : n_windows
         RDMs_this_frame(coeff_i).RDM = this_RDM;
         RDMs_this_frame(coeff_i).name = this_RDM_name;
     
+
         %% Display RDMs
 
         showRDMs(RDMs_this_frame(coeff_i), fig_i, false, [], false, 3/4, [], 'Jet');
         handleCurrentFigure(fullfile(figures_dir, sprintf('%s-window%02d', this_coeff, window_i)), userOptions);
         
         fig_i = fig_i + 1;
+
+
+        %% Save RDMs
+
+        save(fullfile(output_dir, sprintf('RDMs-frame-%02d.mat'), 'RDMs_this_frame'));
         
     end%for
 end%for
