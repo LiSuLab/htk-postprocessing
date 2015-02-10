@@ -50,7 +50,7 @@ fw = 3;
 
 n_windows = n_frames / fw;
 
-for window_i = 1 : 1 %n_window
+for window_i = 1 : n_windows
     
     % Clear out any old values
     RDMs_this_frame = struct();
