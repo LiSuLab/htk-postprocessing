@@ -37,7 +37,7 @@ end
 for rdm_i = 1:size(RDMs_per_frame, 3)
     this_RDM = squareform(RDMs_per_frame(:,:,rdm_i));
     this_RDM = scale01(tiedrank(this_RDM));
-    rdm_title = sprintf('frame%03d', rdm_i-1);
+    rdm_title = sprintf('cep-frame%03d', rdm_i-1);
     % make into struct to add a title
     s_RDM = struct('name', rdm_title, 'RDM', squareform(this_RDM));
     % we've pre-rank-transformed them for speed

@@ -34,6 +34,9 @@ def get_triphone_lists(input_filename, frame_cap, silent):
 
     current_word_data = dict()
 
+    if not silent:
+        prints("Getting triphone lists from {0}...".format(input_filename))
+
     # Start reading from the input file
     with open(input_filename, encoding="utf-8") as input_file:
         # Go through the file line by line
@@ -51,6 +54,9 @@ def get_triphone_lists(input_filename, frame_cap, silent):
                 word_file = word_path.split('/')[-1]
                 word_name = word_file.split('.')[0]
 
+                if not silent:
+                    print("")
+
                 # If there is already a previous word being remembered, we want
                 # to store all the appropriate data before we start on a new
                 # word
@@ -64,7 +70,7 @@ def get_triphone_lists(input_filename, frame_cap, silent):
 
                 # Feedback
                 if not silent:
-                    prints(word_name)
+                    prints("Getting triphone lists for '{0}'".format(word_name), end="")
 
             elif active_triphone_frame_match:
                 # We've matched the list of active triphones for a given frame.
@@ -72,7 +78,8 @@ def get_triphone_lists(input_filename, frame_cap, silent):
 
                 # If the frame_id we've extracted is larger than our
                 # user-specified cap, we can skip this one.
-                if int(frame_id) >= frame_cap:
+                # We add 1 because frames from HVite are 1-indexed.
+                if int(frame_id) >= int(frame_cap) + 1:
                     continue
 
                 # Otherwise continue to break down the list of triphones which
@@ -80,11 +87,16 @@ def get_triphone_lists(input_filename, frame_cap, silent):
                 triphone_list = active_triphone_frame_match.group('triphonelist').split(' ')
 
                 # We add what we've got to the current word's data
-                current_word_data[current_word][frame_id] = triphone_list
+                current_word_data[frame_id] = triphone_list
+
+                if not silent:
+                    print(".", end="")
 
     # When the file is over, we just have to store the last word's data and
     # we're done
     word_data[current_word] = current_word_data
+    if not silent:
+        print("")
 
     return word_data
 
@@ -118,7 +130,7 @@ def process_args(switches, parameters, commands):
     return silent, log, input_filename, output_filename, wordlist_filename, frame_cap
 
 
-def apply_active_triphone_model(words_data, word_list, frame_cap):
+def apply_active_triphone_model(words_data, word_list, frame_cap, silent):
     """
     The active triphone model will be calculated as follows.
 
@@ -126,66 +138,84 @@ def apply_active_triphone_model(words_data, word_list, frame_cap):
     - The models will give, for each frame and each words, a count of the
       active triphones with the current phone as the centre phone.
 
-    So to be returned is a phone-keyed dictionary of frame_id-keyed
-    dictionaries of word-keyed dictionaries of counts
+    So to be returned is a phone-keyed dictionary of word-keyed dictionary of
+    frame-indexed count vertors.
 
+    :param silent:
     :param frame_cap:
     :param word_list:
     :param words_data:
     """
     phone_list = ["sil", "sp", "ax", "k", "ao", "d", "ia", "n", "ae", "r", "b", "t", "ea", "p", "l", "ey", "ih", "g", "m", "y", "uh", "s", "ng", "aa", "ow", "sh", "eh", "zh", "iy", "v", "ch", "jh", "ay", "uw", "th", "z", "hh", "er", "oh", "ah", "aw", "oy", "dh", "f", "ua", "w"]
 
+    if not silent:
+        prints("Applying active triphone model...")
     phones_data = dict()
 
     for phone in phone_list:
 
-        frames_data = dict()
+        # Empty out the data for each word every time we look at a new phone
+        each_word_data = dict()
 
-        for frame in range(frame_cap):
-            frame_id = str(frame)
+        for word in word_list:
 
-            for word in word_list:
+            # Now want to build a frame-indexed vector of counts
+            counts = []
+
+            # In the transcript from HVite, the first frame is numbered "frame 1"
+            # and it is apparently constrained to be silence.  There are only
+            # active triphones from frame 2 onwards.
+            # So, we start at 2 (because that's where the data is) and we add 1
+            # (because the frames are 1-indexed).
+            for frame in range(2, int(frame_cap) + 1):
+                frame_id = str(frame)
 
                 triphone_list = words_data[word][frame_id]
 
                 count = 0
                 for triphone in triphone_list:
-
                     phone_triplet = triphone.replace('-', ' ').replace('+', ' ').split(' ')
 
                     if phone_triplet == phone:
                         count += 1
 
-                words_data[word] = count
+                counts.append(count)
 
-            frames_data[frame_id] = words_data
+            each_word_data[word] = counts
 
-        phones_data[phone] = frames_data
+        phones_data[phone] = each_word_data
 
     return phones_data
 
 
-def get_word_list(wordlist_filename):
+def get_word_list(wordlist_filename, silent):
     """
     Returns a list of all the (newline-separated) words in the wordlist file.
     :param wordlist_filename:
     """
+
+    if not silent:
+        prints("Getting word list...")
+
     with open(wordlist_filename, encoding="utf-8") as word_list_file:
         for word in word_list_file:
-            yield word
+            yield word.strip()
 
 
-def save_features(phones_data, output_filename):
+def save_features(phones_data, output_filename, silent):
     """
     Saves the data in a Matlab-readable format.
     This will be a phone-keyed dictionary of
     :param phones_data:
     :param output_filename:
     """
-    scipy.io.savemat(output_filename, phones_data, appendmat=False)
-    # for phone, frames_data in phones_data:
-    #     for frame_id, words_data in frames_data:
-    #         for word, count in words_data:
+
+    if not silent:
+        prints("Saving features to {0}".format(output_filename))
+
+    for phone in phones_data.keys():
+        this_phone_data = phones_data[phone]
+        scipy.io.savemat("{1}-{0}".format(phone, output_filename), this_phone_data, appendmat=True)
 
 
 def main(argv):
@@ -193,12 +223,20 @@ def main(argv):
     Do dat analysis.
     :param argv:
     """
+
     (switches, parameters, commands) = parse_args(argv)
     (silent, log, input_filename, output_filename, wordlist_filename, frame_cap) = process_args(switches, parameters, commands)
-    word_list = get_word_list(wordlist_filename)
+
+    if not silent:
+        prints("==================")
+
+    word_list = get_word_list(wordlist_filename, silent)
     word_data = get_triphone_lists(input_filename, frame_cap, silent)
-    phones_data = apply_active_triphone_model(word_data, word_list, frame_cap)
-    save_features(phones_data, output_filename)
+    phones_data = apply_active_triphone_model(word_data, word_list, frame_cap, silent)
+    save_features(phones_data, output_filename, silent)
+
+    if not silent:
+        prints("==== DONE! =======")
 
 if __name__ == "__main__":
    with open(get_log_filename(__file__), mode="a", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
