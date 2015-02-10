@@ -58,6 +58,10 @@ def get_parameter(parameters, param_name, required=False, usage_text=None):
     """
     if param_name in parameters:
         param = parameters[param_name]
+        # Want to remove trailing spaces (shouldn't be necessary but what the
+        # hell) and quotes which may exist around paths.
+        param = param.strip(" ")
+        param = param.strip('"')
     elif required:
         if usage_text is not None:
             print(usage_text)
