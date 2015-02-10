@@ -87,11 +87,12 @@ for window_i = 1 : n_windows
         handleCurrentFigure(fullfile(figures_dir, sprintf('%s-window%02d', this_coeff, window_i)), userOptions);
         
         fig_i = fig_i + 1;
-
-
-        %% Save RDMs
-
-        save(fullfile(output_dir, sprintf('RDMs-frame-%02d.mat'), 'RDMs_this_frame'));
         
     end%for
+
+
+    %% Save RDMs
+    cd(output_dir);
+    save(sprintf('RDMs-window%02d.mat', window_i), 'RDMs_this_frame');
+    
 end%for
