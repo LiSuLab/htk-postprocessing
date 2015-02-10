@@ -11,7 +11,7 @@ import scipy.io
 from cw_common import *
 
 
-def filter_coefficients(input_filename, output_filename, c_list, d_list, a_list, frames, silent, log):
+def filter_coefficients(input_filename, output_filename, c_list, d_list, a_list, frames, silent):
     """
     Main function.
     :param input_filename:
@@ -248,7 +248,6 @@ def process_args(switches, parameters, commands):
     )
 
     silent = "S" in switches
-    log = "l" in switches
 
     input_file = get_parameter(parameters, "input", True, usage_text)
     output_file = get_parameter(parameters, "output", True, usage_text)
@@ -269,13 +268,13 @@ def process_args(switches, parameters, commands):
     # set defaults
     frames = frames if frames != "" else 20 # default of 20
 
-    return silent, log, input_file, output_file, c_list, d_list, a_list, frames
+    return silent, input_file, output_file, c_list, d_list, a_list, frames
 
 
 def main(argv):
     (switches, parameters, commands) = parse_args(argv)
-    (silent, log, input_file, output_file, c_list, d_list, a_list, frames) = process_args(switches, parameters, commands)
-    filter_coefficients(input_file, output_file, c_list, d_list, a_list, frames, silent, log)
+    (silent, input_file, output_file, c_list, d_list, a_list, frames) = process_args(switches, parameters, commands)
+    filter_coefficients(input_file, output_file, c_list, d_list, a_list, frames, silent)
 
 if __name__ == "__main__":
    with open(get_log_filename(__file__), mode="a", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
