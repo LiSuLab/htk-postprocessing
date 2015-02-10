@@ -11,18 +11,23 @@ import scipy.io
 from cw_common import *
 
 
-def filter_coefficients(input_filename, output_filename, c_list, d_list, a_list, frames, silent):
+def filter_coefficients_from_htk(input_filename, word_list, c_list, d_list, a_list, frame_cap, silent):
     """
     Main function.
+
+    Returns a coefficient_id-keyed dictionary of word-keyed dictionaries of
+    frame-indexed lists of coefficient values.
+
     :param input_filename:
-    :param output_filename:
+    :param word_list:
     :param c_list:
     :param d_list:
     :param a_list:
-    :param frames:
+    :param frame_cap:
     :param silent:
-    :param log: [currently unused]
     """
+
+    #region Regular expressions...
 
     # Regular expression for name of a word
     word_name_re = re.compile(r"^-+ Source: (?P<wordname>[a-z]+)\.wav -+$")
@@ -69,151 +74,73 @@ def filter_coefficients(input_filename, output_filename, c_list, d_list, a_list,
                                   r"(?P<A12>-?[0-9]+\.[0-9]+) +"
                                   r"(?P<A00>-?[0-9]+\.[0-9]+) *$"))
 
-    c_list_match_names = list(map(lambda c: "C{0}".format(c.zfill(2)), c_list))
-    d_list_match_names = list(map(lambda d: "D{0}".format(d.zfill(2)), d_list))
-    a_list_match_names = list(map(lambda a: "A{0}".format(a.zfill(2)), a_list))
+    #endregion
+
+    c_match_names = list(map(lambda c: "C{0}".format(str(c).zfill(2)), c_list))
+    d_match_names= list(map(lambda d: "D{0}".format(str(d).zfill(2)), d_list))
+    a_match_names = list(map(lambda a: "A{0}".format(str(a).zfill(2)), a_list))
+
+    # All coefficient names
+    all_coeff_names = c_match_names + d_match_names + a_match_names
+
+    # Prepare dictionaries of outputs.
+    coeffs = dict()
+    for coeff_name in all_coeff_names:
+        coeffs[coeff_name] = dict()
+        for word in word_list:
+            coeffs[coeff_name][word] = Nones(frame_cap)
+
+    this_word = None
 
     # Start reading from the input file
     with open(input_filename, encoding="utf-8") as input_file:
-        with open(output_filename, mode="w", encoding="utf-8") as output_file:
-            for line in input_file:
-                word_name_match = word_name_re.match(line)
-                frame_vector_match = frame_vector_re.match(line)
-                if word_name_match:
-                    # Matched a new word name
-                    # Write that word name in the output file
-                    word_name = word_name_match.group('wordname')
-                    output_file.write("{0}\n".format(word_name))
-                    if not silent:
-                        prints(word_name)
-
-                elif frame_vector_match:
-                    # Matched a frame vector line
-
-                    frame_id = frame_vector_match.group("frameid")
-
-                    # Only want to import if the frameid is less than the number of frames requested
-                    if int(frame_id) < frames:
-                        # Get the requested coefficients
-                        c_coeffs = list(map(lambda c_match_name: frame_vector_match.group(c_match_name), c_list_match_names))
-                        d_coeffs = list(map(lambda d_match_name: frame_vector_match.group(d_match_name), d_list_match_names))
-                        a_coeffs = list(map(lambda a_match_name: frame_vector_match.group(a_match_name), a_list_match_names))
-
-                        line_to_write = ""
-                        line_to_write += frame_id
-                        line_to_write += ":"
-                        for coeff in c_coeffs + d_coeffs + a_coeffs:
-                            line_to_write += coeff
-                            line_to_write += ","
-                        # remove trailing comma
-                        line_to_write = line_to_write[:-1]
-                        line_to_write += "\n"
-
-                        output_file.write(line_to_write)
-
-
-def get_condition_vectors(input_filename, word_list, silent):
-    """
-    Expect frames to start at 0 for each condition and to be sequential
-    in increments of 1
-
-    :param input_filename:
-    :param word_list:
-    :param silent:
-    :return condition_vectors: a word-keyed dictionary of
-            (frame, condition)-arrays
-    :return condition_labels: a dictionary of ints, indexed by condition
-            labels.
-    """
-    condition_label_re = re.compile(r"^(?P<conditionlabel>[a-z]+)$")
-    feature_vector_re = re.compile(r"^(?P<frameid>[0-9]+):(?P<featurevector>.*)$")
-
-    condition_vectors = dict()
-    this_condition_label = None
-
-    # Defaults
-    this_condition_array = None
-
-    with open(input_filename, encoding="utf-8") as input_file:
-
         for line in input_file:
+            word_name_match = word_name_re.match(line)
+            frame_vector_match = frame_vector_re.match(line)
 
-            # Possible matches
-            condition_label_match = condition_label_re.match(line)
-            feature_vector_match = feature_vector_re.match(line)
-
-            # The line we've read can match either condition labels
-            # or feature vectors for a particular frame
-            if condition_label_match:
-
-                # We've matched a new condition label
-
-                # If there's a condition that's already been processed,
-                # we should remember what we've got so far
-                # BUT we only need to do this if it's on the approved word
-                # list!
-                if (this_condition_label is not None) and (this_condition_label in word_list):
-                    condition_vectors[this_condition_label] = this_condition_array
-
-                # Reset defaults
-                this_condition_array = None
-
-                # Now we can start on the newly processed label
-                this_condition_label = condition_label_match.group("conditionlabel")
-
+            if word_name_match:
+                # Matched a word name.
+                # Remember which word we're currently looking at
+                this_word = word_name_match.group('wordname')
                 if not silent:
-                    prints("Condition: {0}".format(this_condition_label))
+                    prints(this_word)
 
-            elif feature_vector_match:
+            # If we've read a word name, but it's not one we're interested in,
+            # we can skip lines until we find one we are interested in.
+            elif this_word is not None and this_word not in word_list:
+                continue
 
-                # We've matched a feature vector for a particular frame
+            elif frame_vector_match:
+                # Matched a frame fector
+                frame_id = frame_vector_match.group('frameid')
+                frame = int(frame_id)
 
-                this_frame_id = feature_vector_match.group("frameid")
-                this_condition_vector = [float(x) for x in feature_vector_match.group("featurevector").split(",")]
+                # If we've gone over the cap, we're not interested so can skip
+                # this line.
+                if frame >= frame_cap:
+                    continue
 
-                if not silent:
-                    prints("\tf-{0}:".format(this_frame_id))
-                    i = 1
-                    for feature in this_condition_vector:
-                        prints("\t\t[{0}]{1}".format(i, feature))
-                        i += 1
+                # Get the requested coefficients
+                for coeff_name in all_coeff_names:
+                    this_coeff = frame_vector_match.group(coeff_name)
+                    coeffs[coeff_name][this_word][frame] = this_coeff
+    return coeffs
 
-                # If this is the first frame for this condition, we need to
-                # create an array for the condition vector
-                if this_condition_array is None:
-                    this_condition_array = numpy.array(this_condition_vector)
-
-                # Otherwise we need to append the current list to the array
-                else:
-                    # Just quick sanity check
-                    if this_frame_id == "0" or this_frame_id is None:
-                        raise ApplicationError("Wasn't expecting the first frame to be here")
-
-                    this_condition_array = numpy.vstack((
-                        this_condition_array,
-                        numpy.array(this_condition_vector)
-                    ))
-
-        # Remember to save what we've got on the last one too.
-        # We only need to do this if it's on the approved word list!
-        if this_condition_label in word_list:
-            condition_vectors[this_condition_label] = this_condition_array
-
-    return condition_vectors
-
-
-def transform_and_save(output_filename, condition_vectors):
+def transform_and_save(output_dirname, coeffs):
     """
-    Will save the following in a Matlab-readable format:
-    - A struct with a field named after each condition label, containing frame
-      x condition arrays
+    Saves in the specified output directory a words-keyed struct of frame-indexed lists of coefficients for each
+    coefficient name.
 
-    :param output_filename:
-    :param condition_vectors: a word-keyed dictionary of
-                              (frame, condition)-arrays
+    :param output_dirname:
+    :param coeffs: a coefficient_id-keyed dictionary of word-keyed dictionaries
+                   of frame-indexed lists of coefficient values
     """
 
-    scipy.io.savemat(output_filename, condition_vectors, appendmat=False)
+    for coeff_name in coeffs.keys():
+        file_name = "cepstral-coefficients-{0}.mat".format(coeff_name)
+        save_path = os.path.join(output_dirname, file_name)
+        # todo does this need to be an array?
+        scipy.io.savemat(save_path, coeffs[coeff_name], appendmat=False)
 
 
 def get_words(words_filename):
@@ -249,8 +176,10 @@ def process_args(switches, parameters, commands):
 
     silent = "S" in switches
 
-    input_file = get_parameter(parameters, "input", True, usage_text)
-    output_file = get_parameter(parameters, "output", True, usage_text)
+    input_filename = get_parameter(parameters, "input", True, usage_text)
+    output_dirname = get_parameter(parameters, "output", True, usage_text)
+    words_filename = get_parameter(parameters, "words", True, usage_text)
+
     c_list = get_parameter(parameters, "C", usage_text=usage_text).split(",")
     d_list = get_parameter(parameters, "D", usage_text=usage_text).split(",")
     a_list = get_parameter(parameters, "A", usage_text=usage_text).split(",")
@@ -264,17 +193,17 @@ def process_args(switches, parameters, commands):
         a_list = []
 
     # But if they're all empty, we have defaults
-    if c_list[0] == "" and d_list[0] == "" and a_list[0] == "":
+    if (len(c_list) == 0) and (len(d_list) == 0) and (len(a_list) == 0):
         c_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
         d_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
         a_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
-    frames = get_parameter(parameters, "frames", usage_text=usage_text)
+    frame_cap = get_parameter(parameters, "frames", usage_text=usage_text)
 
     # set defaults
-    frames = frames if frames != "" else 20 # default of 20
+    frame_cap = frame_cap if frame_cap != "" else 20 # default of 20
 
-    return silent, input_file, output_file, c_list, d_list, a_list, frames
+    return silent, input_filename, output_dirname, words_filename, c_list, d_list, a_list, frame_cap
 
 
 def main(argv):
@@ -283,9 +212,15 @@ def main(argv):
     :param argv:
     """
     (switches, parameters, commands) = parse_args(argv)
-    (silent, input_file, output_file, c_list, d_list, a_list, frames) = process_args(switches, parameters, commands)
-    filter_coefficients(input_file, output_file, c_list, d_list, a_list, frames, silent)
+    (silent, input_filename, output_dirname, words_filename, c_list, d_list, a_list, frames) = process_args(switches, parameters, commands)
+    word_list = get_words(words_filename)
+    coeffs = filter_coefficients_from_htk(input_filename, word_list, c_list, d_list, a_list, frames, silent)
+    transform_and_save(output_dirname, coeffs)
+
+#region if __name__ == "__main__": ...
 
 if __name__ == "__main__":
    with open(get_log_filename(__file__), mode="a", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
         main(sys.argv)
+
+#endregion

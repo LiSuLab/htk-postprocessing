@@ -47,6 +47,15 @@ def parse_args(args):
     return switches, parameters, commands
 
 
+def Nones(l):
+    """
+    Produces a list of Nones of the specified length
+    :param l:
+    :return:
+    """
+    return l * [None]
+
+
 def get_parameter(parameters, param_name, required=False, usage_text=None):
     """
     Gets parameters from a parameter list
