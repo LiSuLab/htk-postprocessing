@@ -17,6 +17,7 @@ figures_dir = fullfile(output_dir, 'Figures');
 %% UserOptions
 userOptions = struct();
 userOptions.saveFiguresJpg = true;
+userOptions.displayFigures = false;
 userOptions.analysisName = 'cepstral';
 userOptions.rootPath = '';
 
@@ -50,6 +51,8 @@ fw = 3;
 
 n_windows = n_frames - fw + 1;
 
+figure_i = 1;
+
 for window_i = 1 : n_windows
     
     % Clear out any old values
@@ -79,10 +82,22 @@ for window_i = 1 : n_windows
     
     %% Display RDMs
     
-    % Quick and dirty way to split into Cs, Ds, As
-    for c_i = 1:3
-        showRDMs(RDMs_this_frame, window_i, false, [], false, 3/4, [], 'Jet');
-        handleCurrentFigure(fullfile(figures_dir, sprintf('window%02d', window_i)), userOptions);
+    % Awful but functional way to split into Cs, Ds, As
+    for cep_class = 'CDA'
+        RDMs_this_cep_class = struct();
+        crdmi = 1;
+        for RDM_i = 1:length(RDMs_this_frame)
+            if RDMs_this_frame(RDM_i).name(1) == cep_class
+                RDMs_this_cep_class(crdmi).RDM = RDMs_this_frame(RDM_i).RDM;
+                RDMs_this_cep_class(crdmi).name = RDMs_this_frame(RDM_i).name;
+                crdmi = crdmi + 1;
+            end%if
+        end%for
+        
+        showRDMs(RDMs_this_cep_class, figure_i, false, [], false, 3/4, [], 'Jet');
+        handleCurrentFigure(fullfile(figures_dir, sprintf('%s-window%02d', cep_class, window_i)), userOptions);
+        
+        figure_i = figure_i + 1;
     end%for
     
 end%for
