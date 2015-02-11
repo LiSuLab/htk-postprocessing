@@ -194,6 +194,48 @@ def apply_active_triphone_model(words_data, word_list, frame_cap, silent):
     return phones_data
 
 
+def look_for_extant_triphones(words_data, word_list, frame_cap, silent):
+    """
+
+    :param words_data:
+    :param word_list:
+    :param frame_cap:
+    :param silent:
+    :return: :raise ApplicationError:
+    """
+    phone_list = ["sil", "sp", "ax", "k", "ao", "d", "ia", "n", "ae", "r", "b", "t", "ea", "p", "l", "ey", "ih", "g", "m", "y", "uh", "s", "ng", "aa", "ow", "sh", "eh", "zh", "iy", "v", "ch", "jh", "ay", "uw", "th", "z", "hh", "er", "oh", "ah", "aw", "oy", "dh", "f", "ua", "w"]
+
+    if not silent:
+        prints("Counting extant triphones...")
+
+    # I guess lazy instantiation wasn't so smart :[
+    local_word_list_copy = list(word_list)
+
+    # We'll use a set so we can just add new items without checking if they're already there each time
+    list_of_extant_triphones = set()
+
+    # Now we go through each word in turn
+    for word in local_word_list_copy:
+
+        if not silent:
+            prints("Processing {0}".format(word))
+
+        # In the transcript from HVite, the first frame is numbered "frame 1"
+        # and it is apparently constrained to be silence.  There are only
+        # active triphones from frame 2 onwards.
+        # So, we start at 2 (because that's where the data is) and we add 1
+        # (because the frames are 1-indexed).
+        for frame in range(2, int(frame_cap) + 1):
+            frame_id = str(frame)
+
+            triphone_list = words_data[word][frame_id]
+
+            for triphone in triphone_list:
+                list_of_extant_triphones.add(triphone)
+
+    return list_of_extant_triphones
+
+
 def get_word_list(wordlist_filename, silent):
     """
     Returns a list of all the (newline-separated) words in the wordlist file.
@@ -243,7 +285,11 @@ def main(argv):
 
     # Different commands for different analyses
     if extant_triphones:
-        look_for_extant_triphones(word_data, word_list, frame_cap, silent)
+        list_of_extant_triphones = look_for_extant_triphones(word_data, word_list, frame_cap, silent)
+        if not silent:
+            prints("Listing extant triphones:")
+            for triphone in list_of_extant_triphones:
+                prints("\t{0}".format(triphone))
     else:
         phones_data = apply_active_triphone_model(word_data, word_list, frame_cap, silent)
         save_features(phones_data, output_dir, silent)
