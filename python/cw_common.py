@@ -49,11 +49,30 @@ def parse_args(args):
 
 def Nones(l):
     """
-    Produces a list of Nones of the specified length
+    Produces a list of None of the specified length l
     :param l:
     :return:
     """
-    return l * [None]
+    return repvect(l, None)
+
+
+def zeros(l):
+    """
+    Produces a list of 0 of the specified length l
+    :param l:
+    :return:
+    """
+    return repvect(l, 0)
+
+
+def repvect(l, v):
+    """
+    Produces a list of v of the specified length l
+    :param v:
+    :param l:
+    :return:
+    """
+    return l * [v]
 
 
 def get_parameter(parameters, param_name, required=False, usage_text=None):
