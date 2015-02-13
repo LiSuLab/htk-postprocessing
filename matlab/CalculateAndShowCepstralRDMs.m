@@ -6,13 +6,13 @@ close all;
 % MFCC - one model for each coefficient
 % CDA - one model for all Cs, one for all Ds, one for all As.
 
-chosen_analysis = 'CDA';
+chosen_analysis = 'MFCC';
 
 %% Paths
 
 % Change these values
 input_dir = fullfile('C:', 'Users', 'cai', 'analyses', 'Lexpro', 'Cepstral_models', 'filtered-cepstral-coefficients');
-output_dir = fullfile('C:', 'Users', 'cai', 'analyses', 'Lexpro', 'Cepstral_models', 'cepstral-class-rdms');
+output_dir = fullfile('C:', 'Users', 'cai', 'analyses', 'Lexpro', 'Cepstral_models', 'cepstral-band-rdms', '60ms-window');
 
 % These values are automatic
 cd(output_dir);
@@ -53,7 +53,7 @@ n_frames = length(coeffs.(coeff_names{file_i}).(word_list{1}));
 % consecutive groups of three frames.
 
 % Frames per window
-fw = 3;
+fw = 6;
 
 % Coeffs per class
 cc = 12;
