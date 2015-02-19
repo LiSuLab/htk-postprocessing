@@ -5,6 +5,7 @@ Extract some cepstral coefficients from HTK's output file.
 
 import re
 
+import numpy
 import scipy
 import scipy.io
 
@@ -16,6 +17,7 @@ def get_triphone_lists(input_filename, frame_cap, silent):
     # Regular expression for the path of a word
     """
     Want to retun a word-keyed dictionary of frame_id-keyed dictionaries of triphone lists.
+    A triphone looks like xx-xx+xx.
     :param input_filename:
     :param frame_cap:
     :param silent:
@@ -44,7 +46,7 @@ def get_triphone_lists(input_filename, frame_cap, silent):
             word_path_match = word_path_re.match(line)
             active_triphone_frame_match = active_triphone_frame_list_re.match(line)
 
-            # So what's up with this line?
+            # So what's up with this line we've just read?
 
             if word_path_match:
                 # We've matched a new word path.
@@ -96,7 +98,7 @@ def get_triphone_lists(input_filename, frame_cap, silent):
     # we're done
     word_data[current_word] = current_word_data
     if not silent:
-        print("")
+        print("") # For the newline
 
     return word_data
 
@@ -132,9 +134,18 @@ def process_args(switches, parameters, commands):
     return silent, log, input_filename, output_dir, wordlist_filename, frame_cap, extant_triphones
 
 
-def apply_active_triphone_model(words_data, word_list, frame_cap, silent):
+def triphone_to_phone_triplet(triphone):
     """
-    The active triphone model will be calculated as follows.
+    Given a triphone like x1-x2+x3, returns a phone triplet like [x1, x2, x3].
+    :param triphone:
+    :return:
+    """
+    return triphone.replace('-', ' ').replace('+', ' ').split(' ')
+
+
+def apply_triphone_count_model(words_data, word_list, phone_list, frame_cap, silent):
+    """
+    The active triphone count model will be calculated as follows.
 
     - There will be one model for each phone.
     - The models will give, for each frame and each words, a count of the
@@ -143,12 +154,12 @@ def apply_active_triphone_model(words_data, word_list, frame_cap, silent):
     So to be returned is a phone-keyed dictionary of word-keyed dictionary of
     frame-indexed count vertors.
 
+    :param phone_list:
     :param silent:
     :param frame_cap:
     :param word_list:
     :param words_data:
     """
-    phone_list = ["sil", "sp", "ax", "k", "ao", "d", "ia", "n", "ae", "r", "b", "t", "ea", "p", "l", "ey", "ih", "g", "m", "y", "uh", "s", "ng", "aa", "ow", "sh", "eh", "zh", "iy", "v", "ch", "jh", "ay", "uw", "th", "z", "hh", "er", "oh", "ah", "aw", "oy", "dh", "f", "ua", "w"]
 
     if not silent:
         prints("Applying active triphone model...")
@@ -183,13 +194,103 @@ def apply_active_triphone_model(words_data, word_list, frame_cap, silent):
                 if triphone == '' or triphone == 'sil' or triphone == 'sp':
                     continue
 
-                phone_triplet = triphone.replace('-', ' ').replace('+', ' ').split(' ')
+                phone_triplet = triphone_to_phone_triplet(triphone)
 
                 if len(phone_triplet) != 3:
                     raise ApplicationError("word:{0} triphone:{1}, frame_id:{2}".format(word, triphone, frame_id))
 
                 # increment the count for the center phone
                 phones_data[phone_triplet[1]][word][frame-2] += 1
+
+    return phones_data
+
+
+def deal_triphones_by_phone(list_of_extant_triphones):
+    """
+    Given list of triphones, returns a phone-keyed dictionary of triphones with the key as the central phone.
+    :param list_of_extant_triphones:
+    """
+    phone_dictionary = dict()
+    for triphone in list_of_extant_triphones:
+        # Skip these erroneous entries
+        if triphone == '' or triphone == 'sil' or triphone == 'sp':
+            continue
+
+        central_phone = triphone_to_phone_triplet(triphone)[1]
+        if central_phone in phone_dictionary.keys():
+            phone_dictionary[central_phone] += [triphone]
+        else:
+            phone_dictionary[central_phone] = [triphone]
+
+    return phone_dictionary
+
+
+def apply_triphone_vector_model(words_data, word_list, phone_list, list_of_extant_triphones, frame_cap, silent):
+    """
+    The active triphone vector model will be calculated as follows.
+
+    - There will be one model for each phone.
+    - The models will give, for each frame and each words, a vector of the
+      active triphones with the current phone as the centre phone.  Only
+      triphones which are ever present will be considered.
+
+    So to be returned is a phone-keyed dictionary of word-keyed dictionaries of
+    frame-by-triphone binary arrays.
+
+    :param list_of_extant_triphones:
+    :param phone_list:
+    :param silent:
+    :param frame_cap:
+    :param word_list:
+    :param words_data:
+    """
+
+    if not silent:
+        prints("Applying active triphone model...")
+
+    word_list = list(word_list)
+
+    triphones_per_phone = deal_triphones_by_phone(list_of_extant_triphones)
+
+    # Prepare the dictionary
+    phones_data = dict()
+    for phone in phone_list:
+
+        # Add the key to the dictionary
+        phones_data[phone] = dict()
+
+        for word in word_list:
+            # Initialise the data for this phone with a frames-by-triphones matrix.
+            # These matrices will be different sizes for each word.
+            # We subtract 1 from the frames because there are only active triphones
+            # in the second frame (the first is apparently constrained to be silence.
+            phones_data[phone][word] = numpy.zeros(int(frame_cap) - 1, len(triphones_per_phone[phone]))
+
+    # Now that we've preallocated, we go through each word in turn
+    for word in word_list:
+
+        # In the transcript from HVite, the first frame is numbered "frame 1"
+        # and it is apparently constrained to be silence.  There are only
+        # active triphones from frame 2 onwards.
+        # So, we start at 2 (because that's where the data is) and we add 1
+        # (because the frames are 1-indexed).
+        for frame in range(2, int(frame_cap) + 1):
+            frame_id = str(frame)
+
+            # The list of triphones for this word this frame
+            triphone_list = words_data[word][frame_id]
+
+            for phone in phone_list:
+
+                # For each possible triphone containing this phone...
+                for triphone_i in range(0, len(triphones_per_phone[phone])):
+                    triphone = triphones_per_phone[phone][triphone_i]
+
+                    # ...if it's active for this frame for this word...
+                    if triphone in triphone_list:
+                        # ...we give it a 1...
+                        phones_data[phone][word][frame-2][triphone_i] = 1
+                        # ...otherwise it stays a 0
 
     return phones_data
 
@@ -203,7 +304,6 @@ def look_for_extant_triphones(words_data, word_list, frame_cap, silent):
     :param silent:
     :return: :raise ApplicationError:
     """
-    phone_list = ["sil", "sp", "ax", "k", "ao", "d", "ia", "n", "ae", "r", "b", "t", "ea", "p", "l", "ey", "ih", "g", "m", "y", "uh", "s", "ng", "aa", "ow", "sh", "eh", "zh", "iy", "v", "ch", "jh", "ay", "uw", "th", "z", "hh", "er", "oh", "ah", "aw", "oy", "dh", "f", "ua", "w"]
 
     if not silent:
         prints("Counting extant triphones...")
@@ -233,7 +333,7 @@ def look_for_extant_triphones(words_data, word_list, frame_cap, silent):
             for triphone in triphone_list:
                 list_of_extant_triphones.add(triphone)
 
-    return list_of_extant_triphones
+    return list(list_of_extant_triphones)
 
 
 def get_word_list(wordlist_filename, silent):
@@ -283,15 +383,19 @@ def main(argv):
     word_list = get_word_list(wordlist_filename, silent)
     word_data = get_triphone_lists(input_filename, frame_cap, silent)
 
+    phone_list = ["sil", "sp", "ax", "k", "ao", "d", "ia", "n", "ae", "r", "b", "t", "ea", "p", "l", "ey", "ih", "g", "m", "y", "uh", "s", "ng", "aa", "ow", "sh", "eh", "zh", "iy", "v", "ch", "jh", "ay", "uw", "th", "z", "hh", "er", "oh", "ah", "aw", "oy", "dh", "f", "ua", "w"]
+
+    list_of_extant_triphones = look_for_extant_triphones(word_data, word_list, frame_cap, silent)
+
     # Different commands for different analyses
     if extant_triphones:
-        list_of_extant_triphones = look_for_extant_triphones(word_data, word_list, frame_cap, silent)
         if not silent:
             prints("Listing extant triphones:")
             for triphone in list_of_extant_triphones:
                 prints("\t{0}".format(triphone))
     else:
-        phones_data = apply_active_triphone_model(word_data, word_list, frame_cap, silent)
+        #phones_data = apply_triphone_count_model(word_data, word_list, phone_list, frame_cap, silent)
+        phones_data = apply_triphone_vector_model(word_data, word_list, phone_list, list_of_extant_triphones, frame_cap, silent)
         save_features(phones_data, output_dir, silent)
 
     if not silent:
