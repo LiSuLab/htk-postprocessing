@@ -164,20 +164,18 @@ def apply_triphone_count_model(words_data, word_list, phone_list, frame_cap, sil
     if not silent:
         prints("Applying active triphone model...")
 
-    local_word_list_copy = list(word_list)
-
     # Prepare the dictionary
     phones_data = dict()
     for phone in phone_list:
         phones_data[phone] = dict()
-        for word in local_word_list_copy:
+        for word in word_list:
             # The first frame is ignored, because there are only active
             # triphones from the second frame (the first is apparently
             # constrained to be silence).  So we subtract 1.
             phones_data[phone][word] = zeros(int(frame_cap) - 1)
 
     # Now we go through each word in turn
-    for word in local_word_list_copy:
+    for word in word_list:
 
         # In the transcript from HVite, the first frame is numbered "frame 1"
         # and it is apparently constrained to be silence.  There are only
@@ -248,13 +246,12 @@ def apply_triphone_vector_model(words_data, word_list, phone_list, list_of_extan
     if not silent:
         prints("Applying active triphone model...")
 
-    word_list = list(word_list)
-
     triphones_per_phone = deal_triphones_by_phone(list_of_extant_triphones)
 
     # Prepare the dictionary
     phones_data = dict()
-    for phone in phone_list:
+    # Use keys here because some phones (eg 'ax' for Lexpro) may not be present
+    for phone in triphones_per_phone.keys():
 
         # Add the key to the dictionary
         phones_data[phone] = dict()
@@ -264,7 +261,9 @@ def apply_triphone_vector_model(words_data, word_list, phone_list, list_of_extan
             # These matrices will be different sizes for each word.
             # We subtract 1 from the frames because there are only active triphones
             # in the second frame (the first is apparently constrained to be silence.
-            phones_data[phone][word] = numpy.zeros(int(frame_cap) - 1, len(triphones_per_phone[phone]))
+
+            # First make a 2-d list as appropriate
+            phones_data[phone][word] = numpy.zeros((int(frame_cap) - 1, len(triphones_per_phone[phone])))
 
     # Now that we've preallocated, we go through each word in turn
     for word in word_list:
@@ -280,7 +279,7 @@ def apply_triphone_vector_model(words_data, word_list, phone_list, list_of_extan
             # The list of triphones for this word this frame
             triphone_list = words_data[word][frame_id]
 
-            for phone in phone_list:
+            for phone in triphones_per_phone.keys():
 
                 # For each possible triphone containing this phone...
                 for triphone_i in range(0, len(triphones_per_phone[phone])):
@@ -331,6 +330,10 @@ def look_for_extant_triphones(words_data, word_list, frame_cap, silent):
             triphone_list = words_data[word][frame_id]
 
             for triphone in triphone_list:
+                # We don't care about some of them.
+                # todo: this particular couple of lines is repeated rather a lot
+                if triphone == '' or triphone == 'sil' or triphone == 'sp':
+                    continue
                 list_of_extant_triphones.add(triphone)
 
     return list(list_of_extant_triphones)
@@ -380,7 +383,7 @@ def main(argv):
     if not silent:
         prints("==================")
 
-    word_list = get_word_list(wordlist_filename, silent)
+    word_list = list(get_word_list(wordlist_filename, silent))
     word_data = get_triphone_lists(input_filename, frame_cap, silent)
 
     phone_list = ["sil", "sp", "ax", "k", "ao", "d", "ia", "n", "ae", "r", "b", "t", "ea", "p", "l", "ey", "ih", "g", "m", "y", "uh", "s", "ng", "aa", "ow", "sh", "eh", "zh", "iy", "v", "ch", "jh", "ay", "uw", "th", "z", "hh", "er", "oh", "ah", "aw", "oy", "dh", "f", "ua", "w"]
