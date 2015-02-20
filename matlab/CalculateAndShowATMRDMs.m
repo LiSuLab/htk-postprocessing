@@ -4,8 +4,8 @@ close all;
 %% Paths
 
 % Change these values
-input_dir = fullfile('C:', 'Users', 'cai', 'analyses', 'Lexpro', 'output', 'python');
-output_dir = fullfile('C:', 'Users', 'cai', 'analyses', 'Lexpro', 'output', 'matlab');
+input_dir = fullfile('/Users', 'cai', 'Desktop', 'python');
+output_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab');
 
 chdir(output_dir)
 mkdir('Figures');
@@ -72,9 +72,36 @@ for frame = 1 : n_frames
             end%if
         end%for:words
         
-        this_RDM = squareform(pdist(data_for_this_RDM, 'hamming'));
+        this_RDM = pdist(data_for_this_RDM, 'hamming');
+        if all(this_RDM == this_RDM(1))
+            this_rank_transformed_RDM = squareform(zeros(size(this_RDM)));
+        else
+            this_rank_transformed_RDM = squareform(scale01(tiedrank(this_RDM)));
+        end%if
+        this_RDM = squareform(this_RDM);
         
-        RDMs(phone_i, frame).name = this_RDM_name;
-        RDMs(phone_i, frame).RDM = this_RDM;
+        RDMs(frame, phone_i).name = this_RDM_name;
+        RDMs(frame, phone_i).RDM = this_RDM;
+        
+        rank_transformed_RDMs(frame, phone_i).name = this_RDM_name;
+        rank_transformed_RDMs(frame, phone_i).RDM = this_rank_transformed_RDM;
     end%for:phones
+    
+    disp(frame);
 end%for:frames
+
+%% Save this for now
+
+chdir(output_dir);
+save('RDMs', 'RDMs');
+clear RDMs;
+
+%% Show RDMs
+
+for frame = 1 : n_frames
+    RDMs_this_frame = rank_transformed_RDMs(frame,:);
+    showRDMs(RDMs_this_frame, frame, false, [0,1], true, 1, [], 'Jet');
+    disp(frame);
+end%for:frames
+
+
