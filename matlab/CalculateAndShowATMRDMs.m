@@ -101,7 +101,44 @@ clear RDMs;
 for frame = 1 : n_frames
     RDMs_this_frame = rank_transformed_RDMs(frame,:);
     showRDMs(RDMs_this_frame, frame, false, [0,1], true, 1, [], 'Jet');
+    
+    f = getframe(gcf);
+    
+    % All models
+    if frame == 1
+        [all_models_image_stack, map] = rgb2ind(f.cdata, 256, 'nodither');
+        all_models_image_stack(1,1,1,n_frames) = 0;
+    else
+        all_models_image_stack(:,:,1,frame) = rgb2ind(f.cdata, map, 'nodither');
+    end%if
+    
+    close;
+    
+    % Individual modles
+    for phone_i = 1 : size(RDMs_this_frame, 2);
+        RDM_this_model = rank_transformed_RDMs(frame, phone_i);
+        showRDMs(RDM_this_model, 1, false, [0,1], true, 1, [], 'Jet');
+        
+        f = getframe(gcf);
+        
+        if frame == 1
+            [each_model_image_stack.(phone_list{phone_i}), maps.(phone_list{phone_i})] = rgb2ind(f.cdata, 256, 'nodither');
+            each_model_image_stack.(phone_list{phone_i})(1,1,1,n_frames) = 0;
+        else
+            each_model_image_stack.(phone_list{phone_i})(:,:,1,frame) = rgb2ind(f.cdata, maps.(phone_list{phone_i}), 'nodither');
+        end%if
+        
+        close;
+        
+    end%for
+        
     disp(frame);
 end%for:frames
 
+% Save animated gifs
+chdir(figures_dir);
+imwrite(all_models_image_stack, map, 'all_models.gif', 'DelayTime', 0.1, 'LoopCount', inf);
+for phone_i = 1 : length(phone_list)
+    imwrite(each_model_image_stack.(phone_list{phone_i}), maps.(phone_list{phone_i}), [phone_list{phone_i}, '.gif'], 'DelayTime', 0.1, 'LoopCount', inf);
+end%for
 
