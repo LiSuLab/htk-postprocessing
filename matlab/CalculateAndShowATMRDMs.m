@@ -6,10 +6,13 @@ close all;
 % Change these values
 input_dir = fullfile('/Users', 'cai', 'Desktop', 'python');
 output_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab');
+toolbox_path = fullfile('/Volumes/Cai''s MBP HDD/Documents/Code/Neurolex/RSA-MEG');
 
 chdir(output_dir)
 mkdir('Figures');
 figures_dir = fullfile(output_dir, 'Figures');
+
+addpath(genpath(toolbox_path));
 
 
 %% UserOptions
