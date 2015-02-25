@@ -97,6 +97,7 @@ for frame = 1 : n_frames
         
         RDMs(frame, phone_i).name = this_RDM_name;
         RDMs(frame, phone_i).RDM = this_RDM;
+        RDMs(frame, phone_i).phone = this_phone;
         
         rank_transformed_RDMs(frame, phone_i).name = this_RDM_name;
         rank_transformed_RDMs(frame, phone_i).RDM = this_rank_transformed_RDM;
