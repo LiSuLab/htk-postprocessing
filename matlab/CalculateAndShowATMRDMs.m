@@ -53,6 +53,13 @@ word_list = fieldnames(phones_data.(phone_list{1}));
 word_list = sort(word_list);
 n_frames = size(phones_data.(phone_list{1}).(word_list{1}), 1);
 
+%% Clear some things out
+clear this_phone_name;
+clear this_file_name;
+clear file_i;
+clear file_list;
+clear filename;
+clear filename_parts;
 
 %% Build RDMs
 % We have one RDM for each frame and each phone
