@@ -4,8 +4,8 @@ close all;
 %% Paths
 
 % Change these values
-input_dir = fullfile('/Users', 'cai', 'Desktop', 'python');
-output_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab');
+input_dir = fullfile('/Users', 'cai', 'Desktop', 'mat-files', '100');
+output_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab-out', '100');
 toolbox_path = fullfile('/Volumes/Cai''s MBP HDD/Documents/Code/Neurolex/RSA-MEG');
 
 chdir(output_dir)
@@ -21,6 +21,11 @@ userOptions.saveFiguresJpg = true;
 userOptions.displayFigures = false;
 userOptions.analysisName = 'active-triphone';
 userOptions.rootPath = '';
+
+
+%% Other options
+animation_frame_delay = 0.15; % Delay in seconds between successive frames
+figure_size = [0, 0, 1200, 800];
 
 
 %% Get the list of phones and load in each one
@@ -112,7 +117,12 @@ for frame = 1 : n_frames
     RDMs_this_frame = rank_transformed_RDMs(frame,:);
     showRDMs(RDMs_this_frame, frame, false, [0,1], true, 1, [], 'Jet');
     
-    f = getframe(gcf);
+    this_figure = gcf;
+        
+    % Resize the current figure
+    set(this_figure, 'Position', figure_size);
+    
+    f = getframe(this_figure);
     
     % All models
     if frame == 1
@@ -129,8 +139,15 @@ for frame = 1 : n_frames
         RDM_this_model = rank_transformed_RDMs(frame, phone_i);
         showRDMs(RDM_this_model, 1, false, [0,1], true, 1, [], 'Jet');
         
-        f = getframe(gcf);
+        this_figure = gcf;
         
+        % Resize the current figure
+        set(this_figure, 'Position', figure_size);
+        
+        % Get the pixel values of the current figure
+        f = getframe(this_figure);
+        
+        % Add the data of the current figure to the stack for animating
         if frame == 1
             [each_model_image_stack.(phone_list{phone_i}), maps.(phone_list{phone_i})] = rgb2ind(f.cdata, 256, 'nodither');
             each_model_image_stack.(phone_list{phone_i})(1,1,1,n_frames) = 0;
@@ -138,6 +155,8 @@ for frame = 1 : n_frames
             each_model_image_stack.(phone_list{phone_i})(:,:,1,frame) = rgb2ind(f.cdata, maps.(phone_list{phone_i}), 'nodither');
         end%if
         
+        % We don't need these piling up, as the image data is saved in the
+        % animation stack.
         close;
         
     end%for
@@ -147,8 +166,8 @@ end%for:frames
 
 % Save animated gifs
 chdir(figures_dir);
-imwrite(all_models_image_stack, map, 'all_models.gif', 'DelayTime', 0.1, 'LoopCount', inf);
+imwrite(all_models_image_stack, map, 'all_models.gif', 'DelayTime', animation_frame_delay, 'LoopCount', inf);
 for phone_i = 1 : length(phone_list)
-    imwrite(each_model_image_stack.(phone_list{phone_i}), maps.(phone_list{phone_i}), [phone_list{phone_i}, '.gif'], 'DelayTime', 0.1, 'LoopCount', inf);
+    imwrite(each_model_image_stack.(phone_list{phone_i}), maps.(phone_list{phone_i}), [phone_list{phone_i}, '.gif'], 'DelayTime', animation_frame_delay, 'LoopCount', inf);
 end%for
 

@@ -90,7 +90,7 @@ def get_triphone_lists(input_filename, frame_cap, silent):
                 # Otherwise continue to break down the list of triphones which
                 # my regular expression wasn't smart enough to get individually
                 triphone_list = active_triphone_frame_match.group('triphonelist').split(' ')
-                
+
                 # The lists of triphones can contain duplicates, so we only want the uniqe entries
                 triphone_list = list(set(triphone_list))
 
