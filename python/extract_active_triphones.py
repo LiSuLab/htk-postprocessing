@@ -13,15 +13,18 @@ from cw_common import *
 
 
 def get_triphone_lists(input_filename, frame_cap, silent):
-
-    # Regular expression for the path of a word
     """
     Want to retun a word-keyed dictionary of frame_id-keyed dictionaries of triphone lists.
     A triphone looks like xx-xx+xx.
+
+    Expect this to be working on the output of `HVite`.  On a file called something like `hv.trace`.
+
     :param input_filename:
     :param frame_cap:
     :param silent:
     """
+
+    # Regular expression for the path of a word
     word_path_re = re.compile(r"^File: (?P<wordpath>.+)\.mfc$")
 
     # Regular expression for frame and list of active triphones
@@ -87,6 +90,9 @@ def get_triphone_lists(input_filename, frame_cap, silent):
                 # Otherwise continue to break down the list of triphones which
                 # my regular expression wasn't smart enough to get individually
                 triphone_list = active_triphone_frame_match.group('triphonelist').split(' ')
+                
+                # The lists of triphones can contain duplicates, so we only want the uniqe entries
+                triphone_list = list(set(triphone_list))
 
                 # We add what we've got to the current word's data
                 current_word_data[frame_id] = triphone_list
@@ -223,7 +229,7 @@ def deal_triphones_by_phone(list_of_extant_triphones):
     return phone_dictionary
 
 
-def apply_triphone_vector_model(words_data, word_list, phone_list, list_of_extant_triphones, frame_cap, silent):
+def apply_triphone_vector_model(words_data, word_list, list_of_extant_triphones, frame_cap, silent):
     """
     The active triphone vector model will be calculated as follows.
 
@@ -236,7 +242,6 @@ def apply_triphone_vector_model(words_data, word_list, phone_list, list_of_extan
     frame-by-triphone binary arrays.
 
     :param list_of_extant_triphones:
-    :param phone_list:
     :param silent:
     :param frame_cap:
     :param word_list:
@@ -398,12 +403,14 @@ def main(argv):
                 prints("\t{0}".format(triphone))
     else:
         #phones_data = apply_triphone_count_model(word_data, word_list, phone_list, frame_cap, silent)
-        phones_data = apply_triphone_vector_model(word_data, word_list, phone_list, list_of_extant_triphones, frame_cap, silent)
+        phones_data = apply_triphone_vector_model(word_data, word_list, list_of_extant_triphones, frame_cap, silent)
         save_features(phones_data, output_dir, silent)
 
     if not silent:
         prints("==== DONE! =======")
 
+# Boilerplate
 if __name__ == "__main__":
-   with open(get_log_filename(__file__), mode="a", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
+    # Log to file
+    with open(get_log_filename(__file__), mode="a", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
         main(sys.argv)
