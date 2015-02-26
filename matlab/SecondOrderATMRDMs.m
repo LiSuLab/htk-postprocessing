@@ -18,7 +18,7 @@ addpath(genpath(toolbox_path));
 %% UserOptions
 userOptions = struct();
 userOptions.saveFiguresJpg = false;
-userOptions.displayFigures = false;
+userOptions.displayFigures = close;
 userOptions.analysisName = 'active-triphone';
 userOptions.rootPath = output_dir;
 
@@ -89,12 +89,14 @@ phone_free_RDMs = rmfield(RDMs, 'phone');
 
 
 %% Start iterating on each frame
-for frame = 1:size(RDMs, 1)
+n_frames = size(RDMs, 1);
+n_phones = size(RDMs, 2);
+for frame = 1:n_frames
     
     %% Second-order similarity matrix
     
     % Apply colour to RDMs for this frame
-    for phone_i = 1 : size(RDMs, 2)
+    for phone_i = 1:n_phones
         
         % Get phone info
         this_phone = RDMs(frame, phone_i).phone;
@@ -111,17 +113,19 @@ for frame = 1:size(RDMs, 1)
         
     % Calculate and show a second order matrix
     % TODO: Don't use Spearman here, use a signed-rank test
-    RDM_similarity_matrix_this_frame = RDMCorrMat(RDMs(frame, :), 1, 'Spearman');
+    RDM_d_matrix_this_frame = RDMCorrMat(RDMs(frame, :), 1, 'Spearman');
     
     %% MDS RDMs
     
     % Set up options
     MDS_options = userOptions;
+    MDS_options.criterion = 'sstress';
     MDS_options.rubberbands = false;
     MDS_options.displayFigures = true;
     MDS_options_extra.titleString = sprintf('Frame %d', frame);
     MDS_options_extra.rubberbandGraphPlot = false;
     MDS_options_extra.figureNumber = 1;
+    MDS_options_extra.dMatrix = RDM_d_matrix_this_frame;
     
     % Do the MDS
     MDSRDMs({phone_free_RDMs(frame, :)}, MDS_options, MDS_options_extra);
@@ -143,7 +147,7 @@ for frame = 1:size(RDMs, 1)
         all_models_image_stack(:,:,1,frame) = rgb2ind(f.cdata, map, 'nodither');
     end%if
     
-    close
+    close;
     
     %% Clean up
     
