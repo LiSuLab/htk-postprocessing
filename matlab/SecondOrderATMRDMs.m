@@ -89,6 +89,8 @@ phone_free_RDMs = rmfield(RDMs, 'phone');
 
 
 %% Start iterating on each frame
+pats_mds_2D = NaN;
+
 n_frames = size(RDMs, 1);
 n_phones = size(RDMs, 2);
 for frame = 1:n_frames
@@ -119,7 +121,7 @@ for frame = 1:n_frames
     
     % Set up options
     MDS_options = userOptions;
-    MDS_options.criterion = 'sstress';
+    MDS_options.criterion = 'metricsstress';
     MDS_options.rubberbands = false;
     MDS_options.displayFigures = true;
     MDS_options_extra.titleString = sprintf('Frame %d', frame);
@@ -128,7 +130,14 @@ for frame = 1:n_frames
     MDS_options_extra.dMatrix = RDM_d_matrix_this_frame;
     
     % Do the MDS
-    MDSRDMs({phone_free_RDMs(frame, :)}, MDS_options, MDS_options_extra);
+    if isnan(pats_mds_2D)
+        % Start at random positions
+        MDS_options_extra.initialPositions = 'random';
+    else
+        % Continue with previous positions
+        MDS_options_extra.initialPositions = pats_mds_2D;
+    end
+    pats_mds_2D = MDSRDMs({phone_free_RDMs(frame, :)}, MDS_options, MDS_options_extra);
     
     %% Adjust figure
     
