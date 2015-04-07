@@ -11,11 +11,15 @@ chosen_analysis = 'MFCC';
 % Can skip the actual display to save a bit of time.
 show_RDMs = false;
 
+% Frames per window.
+% For HTK, each frame is 10ms.
+frames_per_window = 3;
+
 %% Paths
 
 % Change these values
-input_dir = fullfile('C:', 'Users', 'cai', 'analyses', 'Lexpro', 'Cepstral_models', 'filtered-cepstral-coefficients');
-output_dir = fullfile('C:', 'Users', 'cai', 'analyses', 'Lexpro', 'Cepstral_models', 'cepstral-band-rdms', '60ms-window');
+input_dir  = fullfile('C:', 'Users', 'cai', 'analyses', 'Lexpro', 'Cepstral_models', 'filtered-cepstral-coefficients');
+output_dir = fullfile('C:', 'Users', 'cai', 'analyses', 'Lexpro', 'Cepstral_models', 'cepstral-band-rdms', '30ms-window');
 
 % These values are automatic
 cd(output_dir);
@@ -55,70 +59,9 @@ n_frames = length(coeffs.(coeff_names{file_i}).(word_list{1}));
 % We want to have one RDM for each cepstral coefficient, and for
 % consecutive groups of three frames.
 
-% Frames per window
-fw = 6;
-
 % Coeffs per class
-cc = 12;
-
-n_windows = n_frames - fw + 1;
-
-fig_i = 1;
-
-%% MFCC
-if strcmp(chosen_analysis, 'MFCC')
-    for window_i = 1 : n_windows
-
-        % Clear out any old values
-        RDMs_this_frame = struct();
-
-        for coeff_i = 1 : length(coeff_names)
-            this_coeff = coeff_names{coeff_i};
-
-            % Preallocate the feature matrix
-            this_feature_matrix = nan(length(word_list), fw);
-
-            % Iterate over words
-            for word_i = 1 : length(word_list)
-                this_word = word_list{word_i};
-                this_feature_matrix(word_i, :) = coeffs.(this_coeff).(this_word)(window_i:window_i + fw - 1);
-            end%for
-
-
-            %% Calculate the RDM
-
-            this_RDM = pdist(this_feature_matrix, 'Correlation');
-            this_RDM = rsa.util.scale01(tiedrank(this_RDM));
-            this_RDM = squareform(this_RDM);
-            this_RDM_name = sprintf('%s (window%02d)', this_coeff, window_i);
-            RDMs_this_frame(coeff_i).RDM = this_RDM;
-            RDMs_this_frame(coeff_i).name = this_RDM_name;
-
-
-            %% Display RDMs
-
-            if show_RDMs
-                rsa.fig.showRDMs(RDMs_this_frame(coeff_i), fig_i, false, [], false, 3/4, [], 'Jet');
-                rsa.fig.handleCurrentFigure(fullfile(figures_dir, sprintf('%s-window%02d', this_coeff, window_i)), userOptions);
-
-            fig_i = fig_i + 1;
-            end
-
-        end%for
-
-
-        %% Save RDMs
-        cd(output_dir);
-        save(sprintf('RDMs-window%02d.mat', window_i), 'RDMs_this_frame');
-
-    end%for
-
-%% CDA
-elseif strcmp(chosen_analysis, 'CDA')
-    
-    %% Split coefficients into classes
-    coeffs_per_class = struct();
-    coeffs_per_class.C = { ...
+coeffs_per_class = struct( ...
+    'C', { ...
         'C01', ...
         'C02', ...
         'C03', ...
@@ -131,8 +74,8 @@ elseif strcmp(chosen_analysis, 'CDA')
         'C10', ...
         'C11', ...
         'C12' ...
-    };
-    coeffs_per_class.D = { ...
+    }, ...
+    'D', { ...
         'D01', ...
         'D02', ...
         'D03', ...
@@ -145,8 +88,8 @@ elseif strcmp(chosen_analysis, 'CDA')
         'D10', ...
         'D11', ...
         'D12' ...
-    };
-    coeffs_per_class.A = { ...
+    }, ...
+    'A', { ...
         'A01', ...
         'A02', ...
         'A03', ...
@@ -159,7 +102,76 @@ elseif strcmp(chosen_analysis, 'CDA')
         'A10', ...
         'A11', ...
         'A12' ...
-    };
+    });
+
+% Assume that this is the same for all
+coefficients_per_class = numel(coeffs_per_class.C);
+
+n_windows = n_frames - frames_per_window + 1;
+
+%% MFCC
+if strcmp(chosen_analysis, 'MFCC')
+
+    % Preallocate model struct
+    n_models = length(coeff_names);
+    models(1:n_windows, 1:n_models) = struct('RDM', []);
+
+    for window_i = 1 : n_windows
+
+        % Clear out any old values
+        RDMs_this_frame = struct();
+
+        fig_i = 1;
+        for coeff_i = 1 : length(coeff_names)
+            this_coeff = coeff_names{coeff_i};
+        
+            rsa.util.prints('Window %d/%d. Coefficient %d/%d (%s).', window_i, n_windows, coeff_i, length(coeff_names), this_coeff);
+
+            % Preallocate the feature matrix
+            this_feature_matrix = nan(length(word_list), frames_per_window);
+
+            % Iterate over words
+            for word_i = 1 : length(word_list)
+                this_word = word_list{word_i};
+                this_feature_matrix(word_i, :) = coeffs.(this_coeff).(this_word)(window_i:window_i + frames_per_window - 1);
+            end%for
+
+
+            %% Calculate the RDM
+
+            this_RDM = pdist(this_feature_matrix, 'Correlation');
+            this_RDM = rsa.util.scale01(tiedrank(this_RDM));
+            this_RDM = squareform(this_RDM);
+            this_RDM_name = sprintf('%s (window%02d)', this_coeff, window_i);
+            RDMs_this_frame(coeff_i).RDM = this_RDM;
+            RDMs_this_frame(coeff_i).name = this_RDM_name;
+            
+            models(window_i, coeff_i).RDM = rsa.rdm.vectorizeRDM(this_RDM);
+
+
+            %% Display RDMs
+
+            if show_RDMs
+                rsa.fig.showRDMs(RDMs_this_frame(coeff_i), fig_i, false, [], false, 3/4, [], 'Jet');
+                rsa.fig.handleCurrentFigure(fullfile(figures_dir, sprintf('%s-window%02d', this_coeff, window_i)), userOptions);
+
+                fig_i = fig_i + 1;
+            end
+
+        end%for
+
+
+        %% Save RDMs
+        cd(output_dir);
+        save(sprintf('RDMs-window%02d.mat', window_i), 'RDMs_this_frame');
+
+    end%for
+    
+    cd(output_dir);
+    save('mfcc_models.mat', 'models');
+
+%% CDA
+elseif strcmp(chosen_analysis, 'CDA')
 
     
     %% Iterate over windows
@@ -170,7 +182,7 @@ elseif strcmp(chosen_analysis, 'CDA')
         for coeff_class_i = 1 : length(coeff_classes)
             coeff_class = coeff_classes(coeff_class_i);
             
-            this_feature_matrix = nan(length(word_list), fw * cc);
+            this_feature_matrix = nan(length(word_list), frames_per_window * coefficients_per_class);
             
             % Iterate over words
             for word_i = 1 : length(word_list)
@@ -179,11 +191,11 @@ elseif strcmp(chosen_analysis, 'CDA')
                 % Collect the feature vector
                 feature_vector = [];
                 feature_i = 1;
-                for coeff_this_class_i = 1 : cc
+                for coeff_this_class_i = 1 : coefficients_per_class
                     this_coeff_name = coeffs_per_class.(coeff_class){coeff_this_class_i};
                     
                     % Iterate over frames per window
-                    for frame_i = 1:fw
+                    for frame_i = 1:frames_per_window
                         % Add the value for this word, for this coeff, for
                         % this frame
                         feature_vector(feature_i) = coeffs.(this_coeff_name).(this_word)(window_i + frame_i - 1);
@@ -208,7 +220,7 @@ elseif strcmp(chosen_analysis, 'CDA')
                 rsa.fig.showRDMs(RDMs_this_frame(coeff_class_i), fig_i, false, [], false, 1, [], 'Jet');
                 rsa.fig.handleCurrentFigure(fullfile(figures_dir, sprintf('%ss-window%02d', coeff_class, window_i)), userOptions);
 
-            fig_i = fig_i + 1;
+                fig_i = fig_i + 1;
             end
 
             %% Save RDMs
@@ -218,7 +230,7 @@ elseif strcmp(chosen_analysis, 'CDA')
         end%for:CDA
     end%for
     
-    %% Nothing
+%% Nothing
 else
     prints('Doing nothing....');
 end%if
