@@ -2,7 +2,7 @@
 
 Cai Wingfield
 
-Code for simple filtering of cepstral feature files.
+Code for simple filtering of cepstral feature files and active triphone models.
 
 ## Instructions ##
 
