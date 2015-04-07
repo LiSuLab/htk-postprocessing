@@ -3,10 +3,13 @@ close all;
 
 
 %% Possible analyses
-% MFCC - one model for each coefficient
+% MFCC - one model for each coefficient.
 % CDA - one model for all Cs, one for all Ds, one for all As.
 
 chosen_analysis = 'MFCC';
+
+% Can skip the actual display to save a bit of time.
+show_RDMs = false;
 
 %% Paths
 
@@ -85,7 +88,7 @@ if strcmp(chosen_analysis, 'MFCC')
             %% Calculate the RDM
 
             this_RDM = pdist(this_feature_matrix, 'Correlation');
-            this_RDM = scale01(tiedrank(this_RDM));
+            this_RDM = rsa.util.scale01(tiedrank(this_RDM));
             this_RDM = squareform(this_RDM);
             this_RDM_name = sprintf('%s (window%02d)', this_coeff, window_i);
             RDMs_this_frame(coeff_i).RDM = this_RDM;
@@ -94,10 +97,12 @@ if strcmp(chosen_analysis, 'MFCC')
 
             %% Display RDMs
 
-            showRDMs(RDMs_this_frame(coeff_i), fig_i, false, [], false, 3/4, [], 'Jet');
-            handleCurrentFigure(fullfile(figures_dir, sprintf('%s-window%02d', this_coeff, window_i)), userOptions);
+            if show_RDMs
+                rsa.fig.showRDMs(RDMs_this_frame(coeff_i), fig_i, false, [], false, 3/4, [], 'Jet');
+                rsa.fig.handleCurrentFigure(fullfile(figures_dir, sprintf('%s-window%02d', this_coeff, window_i)), userOptions);
 
             fig_i = fig_i + 1;
+            end
 
         end%for
 
@@ -193,16 +198,18 @@ elseif strcmp(chosen_analysis, 'CDA')
             %% Calculate the RDM
 
             this_RDM = pdist(this_feature_matrix, 'Correlation');
-            this_RDM = scale01(tiedrank(this_RDM));
+            this_RDM = rsa.util.scale01(tiedrank(this_RDM));
             this_RDM = squareform(this_RDM);
             this_RDM_name = sprintf('%ss (window%02d)', coeff_class, window_i);
             RDMs_this_frame(coeff_class_i).RDM = this_RDM;
             RDMs_this_frame(coeff_class_i).name = this_RDM_name;
             
-            showRDMs(RDMs_this_frame(coeff_class_i), fig_i, false, [], false, 1, [], 'Jet');
-            handleCurrentFigure(fullfile(figures_dir, sprintf('%ss-window%02d', coeff_class, window_i)), userOptions);
+            if show_RDMs
+                rsa.fig.showRDMs(RDMs_this_frame(coeff_class_i), fig_i, false, [], false, 1, [], 'Jet');
+                rsa.fig.handleCurrentFigure(fullfile(figures_dir, sprintf('%ss-window%02d', coeff_class, window_i)), userOptions);
 
             fig_i = fig_i + 1;
+            end
 
             %% Save RDMs
             cd(output_dir);
