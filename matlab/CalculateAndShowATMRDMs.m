@@ -33,6 +33,7 @@ sliding_window_step = 1;
 
 
 %% Display options
+do_display = true;
 animation_frame_delay = 0.15; % Delay in seconds between successive frames
 figure_size = [0, 0, 1200, 800];
 
@@ -138,61 +139,67 @@ clear RDMs;
 
 %% Show RDMs
 
-for frame = 1 : n_frames
-    RDMs_this_frame = rank_transformed_RDMs(frame,:);
-    showRDMs(RDMs_this_frame, frame, false, [0,1], true, 1, [], 'Jet');
-    
-    this_figure = gcf;
-        
-    % Resize the current figure
-    set(this_figure, 'Position', figure_size);
-    
-    f = getframe(this_figure);
-    
-    % All models
-    if frame == 1
-        [all_models_image_stack, map] = rgb2ind(f.cdata, 256, 'nodither');
-        all_models_image_stack(1,1,1,n_frames) = 0;
-    else
-        all_models_image_stack(:,:,1,frame) = rgb2ind(f.cdata, map, 'nodither');
-    end%if
-    
-    close;
-    
-    % Individual modles
-    for phone_i = 1 : size(RDMs_this_frame, 2);
-        RDM_this_model = rank_transformed_RDMs(frame, phone_i);
-        showRDMs(RDM_this_model, 1, false, [0,1], true, 1, [], 'Jet');
-        
+if do_display
+
+    n_animation_frames = size(rank_transformed_RDMs, 1);
+
+    for frame = 1 : n_animation_frames
+        RDMs_this_frame = rank_transformed_RDMs(frame,:);
+        showRDMs(RDMs_this_frame, frame, false, [0,1], true, 1, [], 'Jet');
+
         this_figure = gcf;
-        
+
         % Resize the current figure
         set(this_figure, 'Position', figure_size);
-        
-        % Get the pixel values of the current figure
-        f = getframe(this_figure);
-        
-        % Add the data of the current figure to the stack for animating
-        if frame == 1
-            [each_model_image_stack.(phone_list{phone_i}), maps.(phone_list{phone_i})] = rgb2ind(f.cdata, 256, 'nodither');
-            each_model_image_stack.(phone_list{phone_i})(1,1,1,n_frames) = 0;
-        else
-            each_model_image_stack.(phone_list{phone_i})(:,:,1,frame) = rgb2ind(f.cdata, maps.(phone_list{phone_i}), 'nodither');
-        end%if
-        
-        % We don't need these piling up, as the image data is saved in the
-        % animation stack.
-        close;
-        
-    end%for
-        
-    disp(frame);
-end%for:frames
 
-% Save animated gifs
-chdir(figures_dir);
-imwrite(all_models_image_stack, map, 'all_models.gif', 'DelayTime', animation_frame_delay, 'LoopCount', inf);
-for phone_i = 1 : length(phone_list)
-    imwrite(each_model_image_stack.(phone_list{phone_i}), maps.(phone_list{phone_i}), [phone_list{phone_i}, '.gif'], 'DelayTime', animation_frame_delay, 'LoopCount', inf);
-end%for
+        f = getframe(this_figure);
+
+        % All models
+        if frame == 1
+            [all_models_image_stack, map] = rgb2ind(f.cdata, 256, 'nodither');
+            all_models_image_stack(1,1,1,n_frames) = 0;
+        else
+            all_models_image_stack(:,:,1,frame) = rgb2ind(f.cdata, map, 'nodither');
+        end%if
+
+        close;
+
+        % Individual modles
+        for phone_i = 1 : size(RDMs_this_frame, 2);
+            RDM_this_model = rank_transformed_RDMs(frame, phone_i);
+            showRDMs(RDM_this_model, 1, false, [0,1], true, 1, [], 'Jet');
+
+            this_figure = gcf;
+
+            % Resize the current figure
+            set(this_figure, 'Position', figure_size);
+
+            % Get the pixel values of the current figure
+            f = getframe(this_figure);
+
+            % Add the data of the current figure to the stack for animating
+            if frame == 1
+                [each_model_image_stack.(phone_list{phone_i}), maps.(phone_list{phone_i})] = rgb2ind(f.cdata, 256, 'nodither');
+                each_model_image_stack.(phone_list{phone_i})(1,1,1,n_frames) = 0;
+            else
+                each_model_image_stack.(phone_list{phone_i})(:,:,1,frame) = rgb2ind(f.cdata, maps.(phone_list{phone_i}), 'nodither');
+            end%if
+
+            % We don't need these piling up, as the image data is saved in the
+            % animation stack.
+            close;
+
+        end%for
+
+        disp(frame);
+    end%for:frames
+
+    % Save animated gifs
+    chdir(figures_dir);
+    imwrite(all_models_image_stack, map, 'all_models.gif', 'DelayTime', animation_frame_delay, 'LoopCount', inf);
+    for phone_i = 1 : length(phone_list)
+        imwrite(each_model_image_stack.(phone_list{phone_i}), maps.(phone_list{phone_i}), [phone_list{phone_i}, '.gif'], 'DelayTime', animation_frame_delay, 'LoopCount', inf);
+    end%for
+
+end
 
