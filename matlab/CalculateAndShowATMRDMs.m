@@ -23,7 +23,16 @@ userOptions.analysisName = 'active-triphone';
 userOptions.rootPath = '';
 
 
-%% Other options
+%% Model options
+
+% Width of the sliding window in frames.
+sliding_window_width = 3;
+
+% Step of the sliding window in frames.
+sliding_window_step = 1;
+
+
+%% Display options
 animation_frame_delay = 0.15; % Delay in seconds between successive frames
 figure_size = [0, 0, 1200, 800];
 
@@ -56,7 +65,20 @@ end
 phone_list = sort(phone_list);
 word_list = fieldnames(phones_data.(phone_list{1}));
 word_list = sort(word_list);
+
+%% Sliding window setup
 n_frames = size(phones_data.(phone_list{1}).(word_list{1}), 1);
+
+sliding_window_positions = [];
+for first_frame_in_window = 1:sliding_window_step:n_frames
+    this_window = (first_frame_in_window:first_frame_in_window+sliding_window_width-1)';
+    if max(this_window) <= n_frames
+        sliding_window_positions = [sliding_window_positions, this_window];
+    else
+        break;
+    end
+end
+n_window_positions = size(sliding_window_positions, 2);
 
 %% Clear some things out
 clear this_phone_name;
