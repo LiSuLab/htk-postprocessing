@@ -78,7 +78,6 @@ for first_frame_in_window = 1:sliding_window_step:n_frames
         break;
     end
 end
-n_window_positions = size(sliding_window_positions, 2);
 
 %% Clear some things out
 clear this_phone_name;
@@ -90,18 +89,19 @@ clear filename_parts;
 
 %% Build RDMs
 % We have one RDM for each frame and each phone
-for frame = 1 : n_frames
+animation_frame_i = 1;
+for window_frames = sliding_window_positions
     for phone_i = 1 : length(phone_list)
         this_phone = phone_list{phone_i};
         
-        this_RDM_name = sprintf('%s frame%d', this_phone, frame);
+        this_RDM_name = sprintf('%s frame%d', this_phone, animation_frame_i);
         
         data_for_this_RDM = NaN;
         
         % The RDMs are word-by-word
         for word_i = 1 : length(word_list)
             this_word = word_list{word_i};
-            data_for_this_condition = phones_data.(this_phone).(this_word)(frame, :);
+            data_for_this_condition = phones_data.(this_phone).(this_word)(window_frames, :);
             if isnan(data_for_this_RDM)
             	data_for_this_RDM = data_for_this_condition;
             else
@@ -117,15 +117,17 @@ for frame = 1 : n_frames
         end%if
         this_RDM = squareform(this_RDM);
         
-        RDMs(frame, phone_i).name = this_RDM_name;
-        RDMs(frame, phone_i).RDM = this_RDM;
-        RDMs(frame, phone_i).phone = this_phone;
+        RDMs(animation_frame_i, phone_i).name = this_RDM_name;
+        RDMs(animation_frame_i, phone_i).RDM = this_RDM;
+        RDMs(animation_frame_i, phone_i).phone = this_phone;
         
-        rank_transformed_RDMs(frame, phone_i).name = this_RDM_name;
-        rank_transformed_RDMs(frame, phone_i).RDM = this_rank_transformed_RDM;
+        rank_transformed_RDMs(animation_frame_i, phone_i).name = this_RDM_name;
+        rank_transformed_RDMs(animation_frame_i, phone_i).RDM = this_rank_transformed_RDM;
     end%for:phones
     
-    disp(frame);
+    disp(animation_frame_i);
+    
+    animation_frame_i = animation_frame_i + 1;
 end%for:frames
 
 %% Save this for now
