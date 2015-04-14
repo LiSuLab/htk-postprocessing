@@ -145,7 +145,7 @@ if do_display
 
     for frame = 1 : n_animation_frames
         RDMs_this_frame = rank_transformed_RDMs(frame,:);
-        showRDMs(RDMs_this_frame, frame, false, [0,1], true, 1, [], 'Jet');
+        rsa.fig.showRDMs(RDMs_this_frame, frame, false, [0,1], true, 1, [], 'Jet');
 
         this_figure = gcf;
 
@@ -167,7 +167,7 @@ if do_display
         % Individual modles
         for phone_i = 1 : size(RDMs_this_frame, 2);
             RDM_this_model = rank_transformed_RDMs(frame, phone_i);
-            showRDMs(RDM_this_model, 1, false, [0,1], true, 1, [], 'Jet');
+            rsa.fig.showRDMs(RDM_this_model, 1, false, [0,1], true, 1, [], 'Jet');
 
             this_figure = gcf;
 
