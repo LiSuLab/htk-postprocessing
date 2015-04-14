@@ -104,9 +104,9 @@ for window_frames = sliding_window_positions
             this_word = word_list{word_i};
             data_for_this_condition = phones_data.(this_phone).(this_word)(window_frames, :);
             if isnan(data_for_this_RDM)
-            	data_for_this_RDM = data_for_this_condition;
+            	data_for_this_RDM = data_for_this_condition(:)';
             else
-                data_for_this_RDM = cat(1, data_for_this_RDM, data_for_this_condition);
+                data_for_this_RDM = cat(1, data_for_this_RDM, data_for_this_condition(:)');
             end%if
         end%for:words
         
@@ -114,7 +114,7 @@ for window_frames = sliding_window_positions
         if all(this_RDM == this_RDM(1))
             this_rank_transformed_RDM = squareform(zeros(size(this_RDM)));
         else
-            this_rank_transformed_RDM = squareform(scale01(tiedrank(this_RDM)));
+            this_rank_transformed_RDM = squareform(rsa.util.scale01(tiedrank(this_RDM)));
         end%if
         this_RDM = squareform(this_RDM);
         
