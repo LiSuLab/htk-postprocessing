@@ -9,8 +9,6 @@ output_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab-out', '100');
 toolbox_path = fullfile('/Volumes/Cai''s MBP HDD/Documents/Code/Neurolex/RSA-MEG');
 
 chdir(output_dir)
-mkdir('Figures');
-figures_dir = fullfile(output_dir, 'Figures');
 
 addpath(genpath(toolbox_path));
 
@@ -151,6 +149,9 @@ clear RDMs;
 %% Show RDMs
 
 if do_display
+    
+    mkdir('Figures');
+    figures_dir = fullfile(output_dir, 'Figures');
 
     n_animation_frames = size(rank_transformed_RDMs, 1);
 
