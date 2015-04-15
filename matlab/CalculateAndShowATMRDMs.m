@@ -29,6 +29,10 @@ sliding_window_width = 3;
 % Step of the sliding window in frames.
 sliding_window_step = 1;
 
+% The first frame of the models isn't 0ms, it's 10ms, so we record that
+% here so we can pad the beginning with zeros.
+model_offset_in_timesteps = 1;
+
 
 %% Display options
 do_display = false;
@@ -87,8 +91,11 @@ clear filename;
 clear filename_parts;
 
 %% Build RDMs
+
+% Start on the first frame of real RDMs
+animation_frame_i = model_offset_in_timesteps;
+
 % We have one RDM for each frame and each phone
-animation_frame_i = 1;
 for window_frames = sliding_window_positions
     for phone_i = 1 : length(phone_list)
         this_phone = phone_list{phone_i};
@@ -135,10 +142,27 @@ for window_frames = sliding_window_positions
         rank_transformed_RDMs(animation_frame_i, phone_i).RDM = this_rank_transformed_RDM;
     end%for:phones
     
-    disp(animation_frame_i);
+    rsa.util.prints('%02d', animation_frame_i);
     
     animation_frame_i = animation_frame_i + 1;
 end%for:frames
+
+% Finally we start the animation with the appropriate number of padding
+% frames.
+for animation_frame_i = 1:model_offset_in_timesteps
+    for phone_i = 1:length(phone_list)
+        this_phone = phone_list{phone_i};
+        this_RDM_name = sprintf('%s framd%d (padding)', this_phone, animation_frame_i);
+        RDMs(animation_frame_i, phone_i).name  = this_RDM_name;
+        RDMs(animation_frame_i, phone_i).phone = this_phone;
+        % Wow, this is fragile and uses Matlab's horrible scope breaking!
+        RDMs(animation_frame_i, phone_i).RDM   = zeros(size(this_RDM));
+        
+        rank_transformed_RDMs(animation_frame_i, phone_i).name = this_RDM_name;
+        % Wow, this is fragile and uses Matlab's horrible scope breaking!
+        rank_transformed_RDMs(animation_frame_i, phone_i).RDM  = zeros(size(this_RDM));
+    end
+end
 
 %% Save this for now
 
