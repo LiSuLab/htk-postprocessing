@@ -157,7 +157,7 @@ if do_display
         % All models
         if frame == 1
             [all_models_image_stack, map] = rgb2ind(f.cdata, 256, 'nodither');
-            all_models_image_stack(1,1,1,n_frames) = 0;
+            all_models_image_stack(1,1,1,n_animation_frames) = 0;
         else
             all_models_image_stack(:,:,1,frame) = rgb2ind(f.cdata, map, 'nodither');
         end%if
@@ -180,7 +180,7 @@ if do_display
             % Add the data of the current figure to the stack for animating
             if frame == 1
                 [each_model_image_stack.(phone_list{phone_i}), maps.(phone_list{phone_i})] = rgb2ind(f.cdata, 256, 'nodither');
-                each_model_image_stack.(phone_list{phone_i})(1,1,1,n_frames) = 0;
+                each_model_image_stack.(phone_list{phone_i})(1,1,1,n_animation_frames) = 0;
             else
                 each_model_image_stack.(phone_list{phone_i})(:,:,1,frame) = rgb2ind(f.cdata, maps.(phone_list{phone_i}), 'nodither');
             end%if
