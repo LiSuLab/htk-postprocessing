@@ -33,7 +33,7 @@ sliding_window_step = 1;
 
 
 %% Display options
-do_display = true;
+do_display = false;
 animation_frame_delay = 0.15; % Delay in seconds between successive frames
 figure_size = [0, 0, 1200, 800];
 
@@ -99,18 +99,29 @@ for window_frames = sliding_window_positions
         
         data_for_this_RDM = NaN;
         
+        % We scale the hamming distances by the length of the vector.
+        length_of_vectors_for_this_phone = NaN;
+        
         % The RDMs are word-by-word
         for word_i = 1 : length(word_list)
             this_word = word_list{word_i};
             data_for_this_condition = phones_data.(this_phone).(this_word)(window_frames, :);
             if isnan(data_for_this_RDM)
             	data_for_this_RDM = data_for_this_condition(:)';
+                length_of_vectors_for_this_phone = numel(data_for_this_condition);
             else
                 data_for_this_RDM = cat(1, data_for_this_RDM, data_for_this_condition(:)');
             end%if
         end%for:words
         
-        this_RDM = pdist(data_for_this_RDM, 'hamming');
+        % Make sure that everything was set ok
+        assert( ...
+            ~isnan(length_of_vectors_for_this_phone), ...
+            'This should be a NaN!');
+        
+        % Compute the distances, and scale it by the length of the vector.
+        this_RDM = pdist(data_for_this_RDM, 'hamming') / length_of_vectors_for_this_phone;
+        
         if all(this_RDM == this_RDM(1))
             this_rank_transformed_RDM = squareform(zeros(size(this_RDM)));
         else
