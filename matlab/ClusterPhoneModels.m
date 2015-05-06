@@ -110,17 +110,24 @@ function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation
     
     rsa.util.prints();
     
-    % Print out clusters
+    % Name and display clusters
+    cluster_names = cell(numel(clusters), 1);
     for cluster_i = 1:numel(clusters)
         cluster = clusters(cluster_i).contents;
         phones = phone_list(cluster);
-        rsa.util.prints('Cluster %d: %s', cluster_i, array2string(phones));
+        cluster_names{cluster_i} = array2string(phones);
+        rsa.util.prints('Cluster %d: %s', cluster_i, cluster_names{cluster_i});
     end
     
     
     %% Combine clusters into representative models
+    
+    % Preallocate
+    cluster_centroid_rdms(1:n_timepoints, 1:numel(clusters)) = struct('RDM', nan, 'name', nan);
+    
     for cluster_i = 1:numel(clusters)
-        
+        cluster_centroid_rdms(:, cluster_i).RDM = cluster_centroid(rdms(:, clusters(cluster_i).contents));
+        cluster_centroid_rdms(:, cluster_i).name = cluster_names{cluster_i};
     end%for
 
     
@@ -129,9 +136,9 @@ function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation
     rsa.util.prints('Saving results...');
     
     % TODO
+    chdir(output_dir);
+    save('cluster_centroid_rdms', 'cluster_centroid_rdms', '-v7.3');
     
-    
-
 end%function
 
 
