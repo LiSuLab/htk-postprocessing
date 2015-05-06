@@ -4,8 +4,8 @@ close all;
 %% Paths
 
 % Change these values
-input_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab-out', '100');
-output_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab-out-again', '100');
+input_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab-out');
+output_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab-out-again');
 toolbox_path = fullfile('/Volumes/Cai''s MBP HDD/Documents/Code/Neurolex/RSA-MEG');
 
 chdir(output_dir)

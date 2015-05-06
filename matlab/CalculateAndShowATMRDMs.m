@@ -4,9 +4,9 @@ close all;
 %% Paths
 
 % Change these values
-input_dir = fullfile('/Users', 'cai', 'Desktop', 'mat-files', '100');
-output_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab-out', '100');
-toolbox_path = fullfile('/Volumes/Cai''s MBP HDD/Documents/Code/Neurolex/RSA-MEG');
+input_dir = fullfile('/Users', 'cai', 'Desktop', 'mat-files');
+output_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab-out');
+toolbox_path = fullfile('/Users', 'cai', 'Desktop', 'rsatoolbox-rsagroup');
 
 chdir(output_dir)
 
@@ -152,7 +152,7 @@ end%for:frames
 for animation_frame_i = 1:model_offset_in_timesteps
     for phone_i = 1:length(phone_list)
         this_phone = phone_list{phone_i};
-        this_RDM_name = sprintf('%s framd%d (padding)', this_phone, animation_frame_i);
+        this_RDM_name = sprintf('%s frame%d (padding)', this_phone, animation_frame_i);
         RDMs(animation_frame_i, phone_i).name  = this_RDM_name;
         RDMs(animation_frame_i, phone_i).phone = this_phone;
         % Wow, this is fragile and uses Matlab's horrible scope breaking!
