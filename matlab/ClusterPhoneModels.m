@@ -48,11 +48,11 @@ function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation
     
     % Metrics
     min_cluster_dist = inf;
-    n_iterations = 0;
+    iteration_count = 0;
     
     while true
         
-        n_iterations = n_iterations + 1;
+        iteration_count = iteration_count + 1;
     
         %% Find closest pair of clusters
         cluster_pair = [nan, nan];
@@ -73,7 +73,7 @@ function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation
         
         %% If closest pair are far enough away, or we've been going on too long then stop
         if min_cluster_dist < cluster_distance_threshold ...
-                && n_iterations < MAX_ITER ...
+                && iteration_count < MAX_ITER ...
                 && numel(clusters) <= 3
             break;
         end
@@ -93,6 +93,12 @@ function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation
         clusters = renumber_clusters(clusters);
 
         %% Print current state
+        rsa.util.prints('Iteration %d: \t %d clusters.', iteration_count, numel(clusters));
+        for i = 1:numel(clusters)
+            rsa.util.prints('\tCluster %d: %s', i, array2string(clusters(i).contents));
+        end
+        % Newline
+        rsa.util.prints();
     
     end%while
 
@@ -177,4 +183,19 @@ function c = correlate_dynamic_rdms(rdms_a, rdms_b, varargin)
         c = max(list_of_values);
     end
     
+end%function
+
+% String representation of a 1-d array.
+%
+% CW 2015-05
+function s = array2string(a)
+    s = '[';
+    for i = 1:numel(a)
+       if i == 1
+           s = [s, a]; 
+       else
+           s = [s, a, ', '];
+       end
+    end
+    s = [s, ']'];
 end%function
