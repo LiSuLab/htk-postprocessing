@@ -5,7 +5,7 @@ function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation
 
     %% Constants
     
-    MAX_ITER = 1000;
+    MAX_ITER = 20;
 
     %% Paths
 
@@ -17,15 +17,17 @@ function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation
 
 
     %% Load RDMs
+    
+    rsa.util.prints('Loading RDMs...');
 
-    rdms = rsa.util.directLoad(fullfile(input_dir, 'rdms.mat'));
+    rdms = rsa.util.directLoad(fullfile(input_dir, 'RDMs.mat'));
     
     phone_list = { rdms(1, :).phone };
     
     [n_timepoints, n_models] = size(rdms);
     
     % Put RDMs in ltcv form.
-    for m = 1:n_models
+    parfor m = 1:n_models
         for t = 1:n_timepoints
             rdms(t, m).RDM = rsa.rdm.vectorizeRDM(rdms(t, m).RDM)';
         end
@@ -34,7 +36,9 @@ function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation
     
     %% Prepare list of clusters
     
-    for model_i = 1:n_models
+    rsa.util.prints('Preparing initial cluster list...');
+    
+    parfor model_i = 1:n_models
         % The list of models in this cluster
         clusters(model_i).contents = [ model_i ];
         % Whether this cluster is still alive
@@ -46,6 +50,8 @@ function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation
     
     %% %% Iteration loop
     
+    rsa.util.prints('Performing hierarchical agglomerative clustering on dynamic model RDMs...');
+    
     % Metrics
     min_cluster_dist = inf;
     iteration_count = 0;
@@ -56,13 +62,18 @@ function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation
     
         %% Find closest pair of clusters
         cluster_pair = [nan, nan];
-        for cluster_1 = 1:numel(clusters)
+        for cluster_1 = 1:numel(clusters)-1
             for cluster_2 = cluster_1+1:numel(clusters)
+                
+                cluster_1_rdms = cluster_centroid(rdms(:, clusters(cluster_1).contents));
+                cluster_2_rdms = cluster_centroid(rdms(:, clusters(cluster_2).contents));
+                
                 dist_1_2 = 1 - correlate_dynamic_rdms( ...
-                    cluster_centroid(rdms(clusters(cluster_1).contents)), ...
-                    cluster_centroid(rdms(clusters(cluster_2).contents)), ...
-                    'aggregate', aggregation, ...
-                    'correlationtype', correlation_type);
+                    cluster_1_rdms, ...
+                    cluster_2_rdms);%, ...
+                    %'aggregate', aggregation, ...
+                    %'correlationtype', correlation_type);
+                
                 if dist_1_2 < min_cluster_dist
                     min_cluster_dist = dist_1_2;
                     cluster_pair = [cluster_1, cluster_2];
@@ -107,6 +118,7 @@ function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation
     
     rsa.util.prints('Completed after %d iterations.', iteration_count);
     rsa.util.prints('%d clusters remain.', numel(clusters));
+    rsa.util.prints('Minimum distance between clusters is %f', min_cluster_dist);
     
     rsa.util.prints();
     
@@ -145,8 +157,11 @@ end%function
 % Returns the cluster centroid for a cluster of dymanic RDMs (ltv, column).
 %
 % CW 2015-05
-function centroid = cluster_centroid(rdms)
-    centroid = mean([rdms.RDM], 2);
+function centroid_rdms = cluster_centroid(rdms)
+    [n_timepoints, n_items] = size(rdms);
+    parfor t = 1:n_timepoints
+        centroid_rdms(t, 1).RDM = mean([rdms(t, :).RDM], 2);
+    end
 end%function
 
 
@@ -173,9 +188,9 @@ function c = correlate_dynamic_rdms(rdms_a, rdms_b, varargin)
     nameCorrelationType    = 'correlationtype';
     validCorrelationType   = {'Pearson', 'Spearman', 'Kendalltaua'};
     checkCorrelationType   = @(x) (any(validatestring(x, validCorrelationType)));
-    defaultCorrelationType = 'Spearman';
+    defaultCorrelationType = 'Pearson';%'Spearman';
 
-    ip = InputParser;
+    ip = inputParser;
     ip.CaseSensitive = false;
     ip.StructExpand  = false;
     
@@ -192,19 +207,22 @@ function c = correlate_dynamic_rdms(rdms_a, rdms_b, varargin)
     
     %% Validate input
     if numel(rdms_b) ~= dynamic_length
-        rsa.util.errors('Dynamic rdm ranges must be of the same length.');
+        rsa.util.errors('Dynamic RDM ranges must be of the same length.');
     end
     
     list_of_values = nan(dynamic_length, 1);
     
-    for rdm_i = 1:dynamic_length
-        rdm_a = rsa.rdm.vectorizerdm(rdms_a(rdm_i).rdm)';
-        rdm_b = rsa.rdm.vectorizerdm(rdms_b(rdm_i).rdm)';
+    parfor rdm_i = 1:dynamic_length
+        rdm_a = rsa.rdm.vectorizeRDM(rdms_a(rdm_i).RDM)';
+        rdm_b = rsa.rdm.vectorizeRDM(rdms_b(rdm_i).RDM)';
         
-        if strcmpi(correlation_type, 'Kendalltaua')
+        % hack
+        if all(rdm_a == 0) && all(rdm_b == 0)
+            list_of_values(rdm_i) = 0;
+        elseif strcmpi(correlation_type, 'Kendalltaua')
             list_of_values(rdm_i) = rsa.stat.rankCorr_Kendall_taua(rdm_a, rdm_b);
         else
-            list_of_values(rdm_i) = corr(rdm_a, rdm_b, 'type', correlation_type);
+            list_of_values(rdm_i) = corr(rdm_a', rdm_b', 'type', correlation_type);
         end
         
     end%for
@@ -228,9 +246,9 @@ function s = array2string(a)
     s = '[';
     for i = 1:numel(a)
        if i == 1
-           s = [s, a]; 
+           s = [s, sprintf('%d',a)]; 
        else
-           s = [s, a, ', '];
+           s = [s, sprintf('%d',a), ', '];
        end
     end
     s = [s, ']'];
