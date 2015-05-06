@@ -10,8 +10,8 @@ function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation
     %% Paths
 
     % Change these values
-    input_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab-out', '100');
-    output_dir = fullfile('/Users', 'cai', 'Desktop', 'clustered-phone-models', '100');
+    input_dir  = fullfile('/', 'Users', 'cai', 'Desktop', '42-phone-models');
+    output_dir = fullfile('/', 'Users', 'cai', 'Desktop', 'clustered-phone-models');
 
     rsa.util.gotoDir(output_dir);
 
@@ -101,7 +101,36 @@ function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation
         rsa.util.prints();
     
     end%while
+    
+    
+    %% Display results
+    
+    rsa.util.prints('Completed after %d iterations.', iteration_count);
+    rsa.util.prints('%d clusters remain.', numel(clusters));
+    
+    rsa.util.prints();
+    
+    % Print out clusters
+    for cluster_i = 1:numel(clusters)
+        cluster = clusters(cluster_i).contents;
+        phones = phone_list(cluster);
+        rsa.util.prints('Cluster %d: %s', cluster_i, array2string(phones));
+    end
+    
+    
+    %% Combine clusters into representative models
+    for cluster_i = 1:numel(clusters)
+        
+    end%for
 
+    
+    %% Save results
+    
+    rsa.util.prints('Saving results...');
+    
+    % TODO
+    
+    
 
 end%function
 
