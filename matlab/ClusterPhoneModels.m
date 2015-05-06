@@ -1,4 +1,11 @@
-function CluserPhoneModels()
+% Clusters phone models.
+%
+% CW 2015-05
+function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation_type)
+
+    %% Constants
+    
+    MAX_ITER = 1000;
 
     %% Paths
 
@@ -6,39 +13,107 @@ function CluserPhoneModels()
     input_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab-out', '100');
     output_dir = fullfile('/Users', 'cai', 'Desktop', 'clustered-phone-models', '100');
 
-    toolbox_path = fullfile('/Volumes/Cai''s MBP HDD/Documents/Code/Neurolex/rsagroup-rsatoolbox');
-
-    addpath(genpath(toolbox_path));
-
     rsa.util.gotoDir(output_dir);
 
 
     %% Load RDMs
 
     rdms = rsa.util.directLoad(fullfile(input_dir, 'rdms.mat'));
-
+    
     phone_list = { rdms(1, :).phone };
+    
+    [n_timepoints, n_models] = size(rdms);
+    
+    % Put RDMs in ltcv form.
+    for m = 1:n_models
+        for t = 1:n_timepoints
+            rdms(t, m).RDM = rsa.rdm.vectorizeRDM(rdms(t, m).RDM)';
+        end
+    end
+    
+    
+    %% Prepare list of clusters
+    
+    for model_i = 1:n_models
+        % The list of models in this cluster
+        clusters(model_i).contents = [ model_i ];
+        % Whether this cluster is still alive
+        clusters(model_i).alive = true;
+    end%for
+    
+    % There is now a singleton cluster for each model
     
     
     %% %% Iteration loop
     
-    %% Find closest pair of clusters
+    % Metrics
+    min_cluster_dist = inf;
+    n_iterations = 0;
     
-    %% If closest pair are far enough away then stop
+    while true
+        
+        n_iterations = n_iterations + 1;
     
-    %% Average together pair of clusters
+        %% Find closest pair of clusters
+        cluster_pair = [nan, nan];
+        for cluster_1 = 1:numel(clusters)
+            for cluster_2 = cluster_1+1:numel(clusters)
+                dist_1_2 = 1 - correlate_dynamic_rdms( ...
+                    cluster_centroid(rdms(clusters(cluster_1).contents)), ...
+                    cluster_centroid(rdms(clusters(cluster_2).contents)), ...
+                    'aggregate', aggregation, ...
+                    'correlationtype', correlation_type);
+                if dist_1_2 < min_cluster_dist
+                    min_cluster_dist = dist_1_2;
+                    cluster_pair = [cluster_1, cluster_2];
+                end
+            end
+        end
+        
+        
+        %% If closest pair are far enough away, or we've been going on too long then stop
+        if min_cluster_dist < cluster_distance_threshold ...
+                && n_iterations < MAX_ITER ...
+                && numel(clusters) <= 3
+            break;
+        end
+        
+
+        %% Combine clusters
+        
+        % Add cluster 2 to cluster 1
+        clusters(cluster_pair(1)).contents = [ ...
+            clusters(cluster_pair(1)).contents, ...
+            clusters(cluster_pair(2)).contents ];
+        
+        % Delete cluster 2
+        clusters(cluster_pair(1)).alive = false;
+
+        %% Renumber clusters
+        clusters = renumber_clusters(clusters);
+
+        %% Print current state
     
-    %% Concatenate list of phones in cluster list
-    
-    %% Renumber clusters
-    
-    %% Print current state
+    end%while
 
 
 end%function
 
 
+% Returns the cluster centroid for a cluster of dymanic RDMs (ltv, column).
+%
+% CW 2015-05
+function centroid = cluster_centroid(rdms)
+    centroid = mean([rdms.RDM], 2);
+end%function
 
+
+% Renumbers a list of clusters.
+%
+% CW 2015-05
+function clusters_out = renumber_clusters(clusters_in)
+    clusters_out = clusters_in([clusters_in.alive]);
+end%function
 
 
 % Returns the average correlation of two dynamic RDMs
@@ -81,8 +156,8 @@ function c = correlate_dynamic_rdms(rdms_a, rdms_b, varargin)
     list_of_values = nan(dynamic_length, 1);
     
     for rdm_i = 1:dynamic_length
-        rdm_a = rsa.rdm.vectorizerdm(rdms_a(rdm_i).rdm);
-        rdm_b = rsa.rdm.vectorizerdm(rdms_b(rdm_i).rdm);
+        rdm_a = rsa.rdm.vectorizerdm(rdms_a(rdm_i).rdm)';
+        rdm_b = rsa.rdm.vectorizerdm(rdms_b(rdm_i).rdm)';
         
         if strcmpi(correlation_type, 'Kendalltaua')
             list_of_values(rdm_i) = rsa.stat.rankCorr_Kendall_taua(rdm_a, rdm_b);
