@@ -31,7 +31,12 @@ function ClusterPhoneModels()
     
     rsa.util.prints('Collecting all model data together...');
     
-    rdms = rsa.rdm.vectorizeRMDs(rdms);
+    for m = 1:n_models
+        for t = 1:n_timepoints
+            rdms(t, m).RDM = rsa.rdm.vectorizeRDM(rdms(t, m).RDM);
+        end
+    end
+    
     all_model_data = nan( ...
         n_models, ...
         n_timepoints * numel(rdms(1,1).RDM));
@@ -45,21 +50,12 @@ function ClusterPhoneModels()
     rsa.util.prints('Clustering dynamic RDM models...');
     
     clustering_method = 'single';
-    clustering_metric = 'spearman';
+    clustering_metric = 'correlation';
     Z = linkage(all_model_data, clustering_method, clustering_metric);
     
     
     %% Display results
     
     dendrogram(Z);
-
-    
-    %% Save results
-    
-    rsa.util.prints('Saving results...');
-    
-    % TODO
-    chdir(output_dir);
-    save('cluster_centroid_rdms', 'cluster_centroid_rdms', '-v7.3');
     
 end%function
