@@ -10,8 +10,8 @@ function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation
     %% Paths
 
     % Change these values
-    input_dir  = fullfile('/', 'Users', 'cai', 'Desktop', '42-phone-models');
-    output_dir = fullfile('/', 'Users', 'cai', 'Desktop', 'clustered-phone-models');
+    input_dir  = '/imaging/cw04/analyses/Lexpro/Phonotopic_mapping/Phonetic_models/pruning-100';
+    output_dir = '/home/cw04/Desktop/clustered-models';
 
     rsa.util.gotoDir(output_dir);
 
@@ -63,6 +63,7 @@ function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation
         %% Find closest pair of clusters
         cluster_pair = [nan, nan];
         for cluster_1 = 1:numel(clusters)-1
+            rsa.util.prints('Comparing cluster %d to all other clusters...', cluster_1);
             for cluster_2 = cluster_1+1:numel(clusters)
                 
                 cluster_1_rdms = cluster_centroid(rdms(:, clusters(cluster_1).contents));
@@ -81,16 +82,20 @@ function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation
             end
         end
         
+        rsa.util.prints('Closest pair: %s', array2string(cluster_pair));
+        
         
         %% If closest pair are far enough away, or we've been going on too long then stop
-        if min_cluster_dist < cluster_distance_threshold ...
-                && iteration_count < MAX_ITER ...
-                && numel(clusters) <= 3
+        if min_cluster_dist > cluster_distance_threshold ...
+                || iteration_count > MAX_ITER ...
+                || numel(clusters) <= 3
             break;
         end
         
 
         %% Combine clusters
+        
+        rsa.util.prints('Combining clusters %d and %d...', cluster_pair(1), cluster_pair(2));
         
         % Add cluster 2 to cluster 1
         clusters(cluster_pair(1)).contents = [ ...
@@ -100,7 +105,11 @@ function ClusterPhoneModels(cluster_distance_threshold, aggregation, correlation
         % Delete cluster 2
         clusters(cluster_pair(1)).alive = false;
 
+        
         %% Renumber clusters
+        
+        rsa.util.prints('Renumbering remaining clusters...');
+        
         clusters = renumber_clusters(clusters);
 
         %% Print current state
