@@ -1,4 +1,4 @@
-function generate_optimal_hierarchy()
+function branching = generate_optimal_hierarchy()
 
     import rsa.*
     import rsa.rdm.*
@@ -156,7 +156,7 @@ function generate_optimal_hierarchy()
     initial_phone_list = 1:n_phones;
     initial_feature_list = 1:n_features;
 
-    hierarchically_classify_features(initial_feature_list, initial_phone_list, feature_cat_rdms);
+    branching = hierarchically_classify_features(initial_feature_list, initial_phone_list, feature_cat_rdms);
     
 
 end%function
