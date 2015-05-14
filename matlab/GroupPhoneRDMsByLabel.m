@@ -37,7 +37,7 @@ function GroupPhoneRDMsByLabel()
     phone_list = { rdms(1, :).phone };
     
     [n_timepoints, n_models] = size(rdms);
-    n_values_in_rdm = numel(squareform(rsa.rdm.vectorizeRDM(rdms(1).RDM)));
+    n_values_in_rdm = numel(rsa.rdm.vectorizeRDM(rdms(1).RDM));
     
     %%
     
@@ -71,14 +71,19 @@ function GroupPhoneRDMsByLabel()
         
         average_rdms = squeeze(mean(rdms_this_category, 3));
         
+        
+        
         for t = 1:n_timepoints
-            category_averaged_rdms(t, category_label_i).RDM = squeeze(average_rdms(t, :));
+            % Scale the result into [0,1], just to make sure that outliers
+            % don't screw things up.
+            category_average_rdms(t, category_label_i).RDM = rsa.util.scale01( ...
+                squeeze(average_rdms(t, :)));
             category_average_rdms(t, category_label_i).name = category_label;
         end
     end
     
     rsa.util.prints('Saving results...');
     
-    save(fullfile(output_dir, 'average_RDMs'), 'category_averaged_rdms', '-v7.3');
+    save(fullfile(output_dir, 'average_RDMs'), 'category_average_rdms', '-v7.3');
     
 end%function
