@@ -99,6 +99,22 @@ def get_parameter(parameters, param_name, required=False, usage_text=None):
     return param
 
 
+def get_first(iterable, default=None):
+    """
+    Returns the first item in an iterable, or a specified default value if
+    the iterable is empty.
+    http://stackoverflow.com/a/365934
+    :param iterable:
+    :param default:
+    :return:
+    """
+    if iterable:
+        for item in iterable:
+            return item
+    else:
+        return default
+
+
 def get_log_filename(filepath):
     """
     Generates a log file path from a given file path.

@@ -252,17 +252,18 @@ def deal_triphones_by_phone(list_of_extant_triphones):
     return phone_dictionary
 
 
-def apply_triphone_vector_model(words_data, word_list, list_of_extant_triphones, frame_cap, silent):
+def apply_triphone_probability_model(words_data, word_list, list_of_extant_triphones, frame_cap, silent):
     """
     The active triphone vector model will be calculated as follows.
 
     - There will be one model for each phone.
     - The models will give, for each frame and each words, a vector of the
-      active triphones with the current phone as the centre phone.  Only
-      triphones which are ever present will be considered.
+      active triphone probabilities, for triphones with the current phone
+      as the centre phone.  Only triphones which are ever present will be
+      considered.
 
-    So to be returned is a phone-keyed dictionary of word-keyed dictionaries of
-    frame-by-triphone binary arrays.
+    So to be returned is a phone-keyed dictionary of word-keyed
+    dictionaries of frame-by-triphone vectors.
 
     :param list_of_extant_triphones:
     :param silent:
@@ -272,7 +273,7 @@ def apply_triphone_vector_model(words_data, word_list, list_of_extant_triphones,
     """
 
     if not silent:
-        prints("Applying active triphone model...")
+        prints("Applying triphone probability model...")
 
     triphones_per_phone = deal_triphones_by_phone(list_of_extant_triphones)
 
@@ -285,13 +286,17 @@ def apply_triphone_vector_model(words_data, word_list, list_of_extant_triphones,
         phones_data[phone] = dict()
 
         for word in word_list:
-            # Initialise the data for this phone with a frames-by-triphones matrix.
-            # These matrices will be different sizes for each word.
-            # We subtract 1 from the frames because there are only active triphones
-            # in the second frame (the first is apparently constrained to be silence.
+            # Initialise the data for this phone with a frames-by-triphones
+            # matrix. These matrices will be different sizes for each word.
+            # We subtract 1 from the frames because there are only active
+            # triphones in the second frame (the first is apparently
+            # constrained to be silence.
 
-            # First make a 2-d list as appropriate
-            phones_data[phone][word] = numpy.zeros((int(frame_cap) - 1, len(triphones_per_phone[phone])))
+            # First make a 2-d list as appropriate.
+            # NaNs will stand for missing data.  So if there's a triphone
+            # which exists somewhere, but not for this word or timeframe,
+            # then we give it a nan rather than a specific number.
+            phones_data[phone][word] = numpy.nan((int(frame_cap) - 1, len(triphones_per_phone[phone])))
 
     # Now that we've preallocated, we go through each word in turn
     for word in word_list:
@@ -305,7 +310,7 @@ def apply_triphone_vector_model(words_data, word_list, list_of_extant_triphones,
             frame_id = str(frame)
 
             # The list of triphones for this word this frame
-            triphone_list = words_data[word][frame_id]
+            triphone_probability_pairs = words_data[word][frame_id]
 
             for phone in triphones_per_phone.keys():
 
@@ -313,11 +318,19 @@ def apply_triphone_vector_model(words_data, word_list, list_of_extant_triphones,
                 for triphone_i in range(0, len(triphones_per_phone[phone])):
                     triphone = triphones_per_phone[phone][triphone_i]
 
-                    # ...if it's active for this frame for this word...
-                    if triphone in triphone_list:
-                        # ...we give it a 1...
-                        phones_data[phone][word][frame-2][triphone_i] = 1
-                        # ...otherwise it stays a 0
+                    # We find the triphone-probability pair for this
+                    # triphone.
+                    triphone_probability_pair = get_first(
+                        filter(
+                            lambda tpp: tpp[0].casefold() == triphone.casefold(),
+                            triphone_probability_pairs),
+                        default=None)
+
+                    # It's possible that the triphone wasn't present, in
+                    # which case the value in the array should stay as
+                    # NaN.
+                    if triphone_probability_pair:
+                        phones_data[phone][word][frame-2][triphone_i] = triphone_probability_pair[1]
 
     return phones_data
 
@@ -422,7 +435,7 @@ def main(argv):
 
     list_of_extant_triphones = look_for_extant_triphones(word_data, word_list, frame_cap, silent)
 
-    phones_data = apply_triphone_vector_model(word_data, word_list, list_of_extant_triphones, frame_cap, silent)
+    phones_data = apply_triphone_probability_model(word_data, word_list, list_of_extant_triphones, frame_cap, silent)
     save_features(phones_data, output_dir, silent)
 
     if not silent:
