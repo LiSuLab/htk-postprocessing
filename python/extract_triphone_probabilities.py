@@ -27,7 +27,8 @@ def split_probability_triphone_pair(ptp):
 
 def get_triphone_probability_lists(input_filename, frame_cap, silent):
     """
-    Want to return a word-keyed dictionary of frame_id-keyed dictionaries of lists of triphone-probability pairs.
+    Want to return a word-keyed dictionary of frame_id-keyed dictionaries
+    of lists of triphone-probability pairs.
     A triphone looks like xx-xx+xx.
 
     Expect this to be working on the output of the new version of `HVite`.
@@ -42,13 +43,14 @@ def get_triphone_probability_lists(input_filename, frame_cap, silent):
     word_path_re = re.compile(r"^File: (?P<word_path>.+)\.mfc$")
 
     # Regular expression for frame and list of active triphones
-    frame_data_re = re.compile((r"Activated phone models for frame "
-                                                # The frame number
-                                                r"(?P<frame_id>[0-9]+) "
-                                                # The count in parentheses (we don't care about this)
-                                                r"\([0-9]+\) : "
-                                                # The list of triphone-probability pairs
-                                                r"(?P<triphone_probability_pair_list>.+)$"))
+    frame_data_re = re.compile((
+        r"Activated phone models for frame "
+        # The frame number
+        r"(?P<frame_id>[0-9]+) "
+        # The count in parentheses (we don't care about this)
+        r"\([0-9]+\) : "
+        # The list of triphone-probability pairs
+        r"(?P<triphone_probability_pair_list>.+)$"))
 
     word_data = dict()
 
@@ -71,8 +73,8 @@ def get_triphone_probability_lists(input_filename, frame_cap, silent):
 
             if word_path_match:
                 # We've matched a new word path.
-                # My regular expression wasn't smart enough to get the actual
-                # word out, so we can do that here.
+                # My regular expression wasn't smart enough to get the
+                # actual word out, so we can do that here.
                 word_path = word_path_match.group('word_path')
                 word_file = word_path.split('/')[-1]
                 word_name = word_file.split('.')[0]
@@ -80,9 +82,9 @@ def get_triphone_probability_lists(input_filename, frame_cap, silent):
                 if not silent:
                     prints("")
 
-                # If there is already a previous word being remembered, we want
-                # to store all the appropriate data before we start on a new
-                # word
+                # If there is already a previous word being remembered, we
+                # want to store all the appropriate data before we start
+                # on a new word
                 if current_word is not None:
                     word_data[current_word] = current_word_data
 
@@ -96,7 +98,8 @@ def get_triphone_probability_lists(input_filename, frame_cap, silent):
                     prints("Getting triphone lists for '{0}'".format(word_name), end="")
 
             elif frame_data_match:
-                # We've matched the list of active triphones for a given frame.
+                # We've matched the list of active triphones for a given
+                # frame.
                 frame_id = frame_data_match.group('frame_id')
 
                 # If the frame_id we've extracted is larger than our
@@ -105,14 +108,14 @@ def get_triphone_probability_lists(input_filename, frame_cap, silent):
                 if int(frame_id) > int(frame_cap):
                     continue
 
-                # Otherwise continue to break down the list of triphones which
-                # my regular expression wasn't smart enough to get individually
+                # Otherwise continue to break down the list of triphones
+                # which my regular expression wasn't smart enough to get
+                # individually
                 triphones = frame_data_match.group('triphone_probability_pair_list').split(' ')
 
                 triphone_probability_pairs = list(map(
                     split_probability_triphone_pair,
-                    triphones
-                ))
+                    triphones))
 
                 # We add what we've got to the current word's data
                 current_word_data[frame_id] = triphone_probability_pairs
@@ -319,6 +322,7 @@ def apply_triphone_vector_model(words_data, word_list, list_of_extant_triphones,
     return phones_data
 
 
+# TODO: documentation for this function
 def look_for_extant_triphones(words_data, word_list, frame_cap, silent):
     """
 
@@ -335,7 +339,8 @@ def look_for_extant_triphones(words_data, word_list, frame_cap, silent):
     # I guess lazy instantiation wasn't so smart :[
     local_word_list_copy = list(word_list)
 
-    # We'll use a set so we can just add new items without checking if they're already there each time
+    # We'll use a set so we can just add new items without checking if
+    # they're already there each time
     list_of_extant_triphones = set()
 
     # Now we go through each word in turn
@@ -344,19 +349,21 @@ def look_for_extant_triphones(words_data, word_list, frame_cap, silent):
         if not silent:
             prints("Processing {0}".format(word))
 
-        # In the transcript from HVite, the first frame is numbered "frame 1"
-        # and it is apparently constrained to be silence.  There are only
-        # active triphones from frame 2 onwards.
+        # In the transcript from HVite, the first frame is numbered
+        # "frame 1" and it is apparently constrained to be silence.
+        # There are only active triphones from frame 2 onwards.
         # So, we start at 2 (because that's where the data is) and we add 1
         # (because the frames are 1-indexed).
         for frame in range(2, int(frame_cap) + 1):
             frame_id = str(frame)
 
-            triphone_list = words_data[word][frame_id]
+            triphone_probability_pair_list = words_data[word][frame_id]
 
-            for triphone in triphone_list:
+            for triphone_probability_pair in triphone_probability_pair_list:
+                triphone = triphone_probability_pair[0]
                 # We don't care about some of them.
-                # todo: this particular couple of lines is repeated rather a lot
+                # todo: this particular couple of lines is repeated rather
+                # todo: a lot
                 if triphone == '' or triphone == 'sil' or triphone == 'sp':
                     continue
                 list_of_extant_triphones.add(triphone)
