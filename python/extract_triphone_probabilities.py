@@ -9,7 +9,7 @@ import numpy
 import scipy
 import scipy.io
 
-from cw_common import *
+from htk_extraction_tools import *
 
 
 def split_probability_triphone_pair(ptp):
@@ -155,101 +155,10 @@ def process_args(switches, parameters, commands):
 
     frame_cap = get_parameter(parameters, "frames", usage_text=usage_text)
 
-    extant_triphones = "extant-triphones" in commands
-
     # set defaults
     frame_cap = frame_cap if frame_cap != "" else 20 # default of 20
 
-    return silent, log, input_filename, output_dir, wordlist_filename, frame_cap, extant_triphones
-
-
-def triphone_to_phone_triplet(triphone):
-    """
-    Given a triphone like x1-x2+x3, returns a phone triplet like [x1, x2, x3].
-    :param triphone:
-    :return:
-    """
-    return triphone.replace('-', ' ').replace('+', ' ').split(' ')
-
-
-def apply_triphone_count_model(words_data, word_list, phone_list, frame_cap, silent):
-    """
-    The active triphone count model will be calculated as follows.
-
-    - There will be one model for each phone.
-    - The models will give, for each frame and each words, a count of the
-      active triphones with the current phone as the centre phone.
-
-    So to be returned is a phone-keyed dictionary of word-keyed dictionary of
-    frame-indexed count vertors.
-
-    :param phone_list:
-    :param silent:
-    :param frame_cap:
-    :param word_list:
-    :param words_data:
-    """
-
-    if not silent:
-        prints("Applying active triphone model...")
-
-    # Prepare the dictionary
-    phones_data = dict()
-    for phone in phone_list:
-        phones_data[phone] = dict()
-        for word in word_list:
-            # The first frame is ignored, because there are only active
-            # triphones from the second frame (the first is apparently
-            # constrained to be silence).  So we subtract 1.
-            phones_data[phone][word] = zeros(int(frame_cap) - 1)
-
-    # Now we go through each word in turn
-    for word in word_list:
-
-        # In the transcript from HVite, the first frame is numbered "frame 1"
-        # and it is apparently constrained to be silence.  There are only
-        # active triphones from frame 2 onwards.
-        # So, we start at 2 (because that's where the data is) and we add 1
-        # (because the frames are 1-indexed).
-        for frame in range(2, int(frame_cap) + 1):
-            frame_id = str(frame)
-
-            triphone_list = words_data[word][frame_id]
-
-            for triphone in triphone_list:
-                # Ignore empty triphones and triphones presented in isolation
-                if triphone == '' or triphone == 'sil' or triphone == 'sp':
-                    continue
-
-                phone_triplet = triphone_to_phone_triplet(triphone)
-
-                if len(phone_triplet) != 3:
-                    raise ApplicationError("word:{0} triphone:{1}, frame_id:{2}".format(word, triphone, frame_id))
-
-                # increment the count for the center phone
-                phones_data[phone_triplet[1]][word][frame-2] += 1
-
-    return phones_data
-
-
-def deal_triphones_by_phone(list_of_extant_triphones):
-    """
-    Given list of triphones, returns a phone-keyed dictionary of triphones with the key as the central phone.
-    :param list_of_extant_triphones:
-    """
-    phone_dictionary = dict()
-    for triphone in list_of_extant_triphones:
-        # Skip these erroneous entries
-        if triphone == '' or triphone == 'sil' or triphone == 'sp':
-            continue
-
-        central_phone = triphone_to_phone_triplet(triphone)[1]
-        if central_phone in phone_dictionary.keys():
-            phone_dictionary[central_phone] += [triphone]
-        else:
-            phone_dictionary[central_phone] = [triphone]
-
-    return phone_dictionary
+    return silent, log, input_filename, output_dir, wordlist_filename, frame_cap
 
 
 def apply_triphone_probability_model(words_data, word_list, list_of_extant_triphones, frame_cap, silent):
@@ -384,21 +293,6 @@ def look_for_extant_triphones(words_data, word_list, frame_cap, silent):
     return list(list_of_extant_triphones)
 
 
-def get_word_list(wordlist_filename, silent):
-    """
-    Returns a list of all the (newline-separated) words in the wordlist file.
-    :param silent:
-    :param wordlist_filename:
-    """
-
-    if not silent:
-        prints("\t[Lazily getting word list...]")
-
-    with open(wordlist_filename, encoding="utf-8") as word_list_file:
-        for word in word_list_file:
-            yield word.strip()
-
-
 def save_features(phones_data, output_dir, silent=False):
     """
     Saves the data in a Matlab-readable format.
@@ -423,7 +317,7 @@ def main(argv):
     """
 
     (switches, parameters, commands) = parse_args(argv)
-    (silent, log, input_filename, output_dir, wordlist_filename, frame_cap, extant_triphones) = process_args(switches, parameters, commands)
+    (silent, log, input_filename, output_dir, wordlist_filename, frame_cap) = process_args(switches, parameters, commands)
 
     if not silent:
         prints("==================")

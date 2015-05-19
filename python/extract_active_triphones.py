@@ -9,7 +9,7 @@ import numpy
 import scipy
 import scipy.io
 
-from cw_common import *
+from htk_extraction_tools import *
 
 
 def get_triphone_lists(input_filename, frame_cap, silent):
@@ -140,14 +140,6 @@ def process_args(switches, parameters, commands):
     return silent, log, input_filename, output_dir, wordlist_filename, frame_cap, extant_triphones
 
 
-def triphone_to_phone_triplet(triphone):
-    """
-    Given a triphone like x1-x2+x3, returns a phone triplet like [x1, x2, x3].
-    :param triphone:
-    :return:
-    """
-    return triphone.replace('-', ' ').replace('+', ' ').split(' ')
-
 
 def apply_triphone_count_model(words_data, word_list, phone_list, frame_cap, silent):
     """
@@ -207,26 +199,6 @@ def apply_triphone_count_model(words_data, word_list, phone_list, frame_cap, sil
                 phones_data[phone_triplet[1]][word][frame-2] += 1
 
     return phones_data
-
-
-def deal_triphones_by_phone(list_of_extant_triphones):
-    """
-    Given list of triphones, returns a phone-keyed dictionary of triphones with the key as the central phone.
-    :param list_of_extant_triphones:
-    """
-    phone_dictionary = dict()
-    for triphone in list_of_extant_triphones:
-        # Skip these erroneous entries
-        if triphone == '' or triphone == 'sil' or triphone == 'sp':
-            continue
-
-        central_phone = triphone_to_phone_triplet(triphone)[1]
-        if central_phone in phone_dictionary.keys():
-            phone_dictionary[central_phone] += [triphone]
-        else:
-            phone_dictionary[central_phone] = [triphone]
-
-    return phone_dictionary
 
 
 def apply_triphone_vector_model(words_data, word_list, list_of_extant_triphones, frame_cap, silent):
@@ -342,21 +314,6 @@ def look_for_extant_triphones(words_data, word_list, frame_cap, silent):
                 list_of_extant_triphones.add(triphone)
 
     return list(list_of_extant_triphones)
-
-
-def get_word_list(wordlist_filename, silent):
-    """
-    Returns a list of all the (newline-separated) words in the wordlist file.
-    :param silent:
-    :param wordlist_filename:
-    """
-
-    if not silent:
-        prints("\t[Lazily getting word list...]")
-
-    with open(wordlist_filename, encoding="utf-8") as word_list_file:
-        for word in word_list_file:
-            yield word.strip()
 
 
 def save_features(phones_data, output_dir, silent):
