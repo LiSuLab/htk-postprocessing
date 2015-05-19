@@ -17,7 +17,7 @@ addpath(genpath(toolbox_path));
 userOptions = struct();
 userOptions.saveFiguresJpg = true;
 userOptions.displayFigures = false;
-userOptions.analysisName = 'active-triphone';
+userOptions.analysisName = 'triphone-likelihood';
 userOptions.rootPath = '';
 
 
@@ -66,8 +66,8 @@ end
 
 %% Get some lists and limits
 phone_list = sort(phone_list);
-word_list = fieldnames(phones_data.(phone_list{1}));
-word_list = sort(word_list);
+word_list  = fieldnames(phones_data.(phone_list{1}));
+word_list  = sort(word_list);
 
 %% Sliding window setup
 n_frames = size(phones_data.(phone_list{1}).(word_list{1}), 1);
@@ -122,24 +122,23 @@ for window_frames = sliding_window_positions
         % Make sure that everything was set ok
         assert( ...
             ~isnan(length_of_vectors_for_this_phone), ...
-            'This should be a NaN!');
+            'This should not be a NaN!');
         
         % Compute the distances, and scale it by the length of the vector.
-        this_RDM = pdist(data_for_this_RDM, 'hamming') / length_of_vectors_for_this_phone;
+        this_RDM = squareform( ...
+            pdist( ...
+                data_for_this_RDM, ...
+                'Correlation'));
         
-        if all(this_RDM == this_RDM(1))
-            this_rank_transformed_RDM = squareform(zeros(size(this_RDM)));
-        else
-            this_rank_transformed_RDM = squareform(rsa.util.scale01(tiedrank(this_RDM)));
-        end%if
-        this_RDM = squareform(this_RDM);
+        this_rank_transformed_RDM = squareform( ...
+            rsa.util.scale01(tiedrank(this_RDM)));
         
         RDMs(animation_frame_i, phone_i).name = this_RDM_name;
         RDMs(animation_frame_i, phone_i).RDM = this_RDM;
         RDMs(animation_frame_i, phone_i).phone = this_phone;
         
-        rank_transformed_RDMs(animation_frame_i, phone_i).name = this_RDM_name;
-        rank_transformed_RDMs(animation_frame_i, phone_i).RDM = this_rank_transformed_RDM;
+        RDMs_for_display(animation_frame_i, phone_i).name = this_RDM_name;
+        RDMs_for_display(animation_frame_i, phone_i).RDM = this_rank_transformed_RDM;
     end%for:phones
     
     rsa.util.prints('%02d', animation_frame_i);
@@ -158,16 +157,16 @@ for animation_frame_i = 1:model_offset_in_timesteps
         % Wow, this is fragile and uses Matlab's horrible scope breaking!
         RDMs(animation_frame_i, phone_i).RDM   = zeros(size(this_RDM));
         
-        rank_transformed_RDMs(animation_frame_i, phone_i).name = this_RDM_name;
+        RDMs_for_display(animation_frame_i, phone_i).name = this_RDM_name;
         % Wow, this is fragile and uses Matlab's horrible scope breaking!
-        rank_transformed_RDMs(animation_frame_i, phone_i).RDM  = zeros(size(this_RDM));
+        RDMs_for_display(animation_frame_i, phone_i).RDM  = zeros(size(this_RDM));
     end
 end
 
 %% Save this for now
 
 chdir(output_dir);
-save('RDMs', 'RDMs');
+save('triphone-likelihood-RDMs', 'RDMs', '-7.3');
 clear RDMs;
 
 %% Show RDMs
@@ -177,10 +176,10 @@ if do_display
     mkdir('Figures');
     figures_dir = fullfile(output_dir, 'Figures');
 
-    n_animation_frames = size(rank_transformed_RDMs, 1);
+    n_animation_frames = size(RDMs_for_display, 1);
 
     for frame = 1 : n_animation_frames
-        RDMs_this_frame = rank_transformed_RDMs(frame,:);
+        RDMs_this_frame = RDMs_for_display(frame,:);
         rsa.fig.showRDMs(RDMs_this_frame, frame, false, [0,1], true, 1, [], 'Jet');
         colormap(jet);
 
@@ -203,7 +202,7 @@ if do_display
 
         % Individual modles
         for phone_i = 1 : size(RDMs_this_frame, 2);
-            RDM_this_model = rank_transformed_RDMs(frame, phone_i);
+            RDM_this_model = RDMs_for_display(frame, phone_i);
             rsa.fig.showRDMs(RDM_this_model, 1, false, [0,1], true, 1, [], 'Jet');
             colormap(jet);
 
@@ -234,9 +233,9 @@ if do_display
 
     % Save animated gifs
     chdir(figures_dir);
-    imwrite(all_models_image_stack, map, 'all_models.gif', 'DelayTime', animation_frame_delay, 'LoopCount', inf);
+    imwrite(all_models_image_stack, map, 'all_models_likelihood.gif', 'DelayTime', animation_frame_delay, 'LoopCount', inf);
     for phone_i = 1 : length(phone_list)
-        imwrite(each_model_image_stack.(phone_list{phone_i}), maps.(phone_list{phone_i}), [phone_list{phone_i}, '.gif'], 'DelayTime', animation_frame_delay, 'LoopCount', inf);
+        imwrite(each_model_image_stack.(phone_list{phone_i}), maps.(phone_list{phone_i}), [phone_list{phone_i}, '_likelihood.gif'], 'DelayTime', animation_frame_delay, 'LoopCount', inf);
     end%for
 
 end
