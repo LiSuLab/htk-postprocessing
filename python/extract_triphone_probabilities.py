@@ -399,7 +399,7 @@ def get_word_list(wordlist_filename, silent):
             yield word.strip()
 
 
-def save_features(phones_data, output_dir, silent):
+def save_features(phones_data, output_dir, silent=False):
     """
     Saves the data in a Matlab-readable format.
     This will be a phone-keyed dictionary of
@@ -413,7 +413,7 @@ def save_features(phones_data, output_dir, silent):
 
     for phone in phones_data.keys():
         this_phone_data = phones_data[phone]
-        scipy.io.savemat("{1}active_triphone_model-{0}".format(phone, output_dir), this_phone_data, appendmat=True)
+        scipy.io.savemat("{1}triphone_likelihood_model-{0}".format(phone, output_dir), this_phone_data, appendmat=True)
 
 
 def main(argv):
