@@ -18,8 +18,8 @@ addpath(genpath(toolbox_path));
 %% UserOptions
 userOptions = struct();
 userOptions.saveFiguresJpg = false;
-userOptions.displayFigures = close;
-userOptions.analysisName = 'active-triphone';
+userOptions.displayFigures = false;
+userOptions.analysisName = 'triphone-likelihood';
 userOptions.rootPath = output_dir;
 
 
@@ -82,8 +82,7 @@ category_colour_mapping(2) = {[0, 1, 0]};
 %% Load RDMs
 
 chdir(input_dir);
-RDMs = load('RDMs.mat');
-RDMs = RDMs.RDMs;
+RDMs = rsa.util.directLoad('triphone-likelihood-RDMs.mat');
 
 phone_free_RDMs = rmfield(RDMs, 'phone');
 
@@ -166,5 +165,5 @@ end%for:frame
 
 % Save animated gifs
 chdir(figures_dir);
-imwrite(all_models_image_stack, map, 'all_models_mds.gif', 'DelayTime', animation_frame_delay, 'LoopCount', inf);
+imwrite(all_models_image_stack, map, 'all_models_likelihood_mds.gif', 'DelayTime', animation_frame_delay, 'LoopCount', inf);
 
