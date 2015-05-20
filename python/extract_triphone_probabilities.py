@@ -60,7 +60,7 @@ def get_triphone_probability_lists(input_filename, frame_cap, silent):
     current_word_data = dict()
 
     if not silent:
-        prints("Getting triphone lists from {0}...".format(input_filename))
+        prints("Getting triphone probability vectors from {0}...".format(input_filename))
 
     # Start reading from the input file
     with open(input_filename, encoding="utf-8") as input_file:
@@ -80,7 +80,7 @@ def get_triphone_probability_lists(input_filename, frame_cap, silent):
                 word_name = word_file.split('.')[0]
 
                 if not silent:
-                    prints("")
+                    print("")
 
                 # If there is already a previous word being remembered, we
                 # want to store all the appropriate data before we start
@@ -112,6 +112,12 @@ def get_triphone_probability_lists(input_filename, frame_cap, silent):
                 # which my regular expression wasn't smart enough to get
                 # individually
                 triphones = frame_data_match.group('triphone_probability_pair_list').split(' ')
+
+                # Filter out any empty ones which may have crept in from
+                # splitting on the space.
+                triphones = filter(
+                    lambda t: t != "",
+                    triphones)
 
                 triphone_probability_pairs = list(map(
                     split_probability_triphone_pair,
@@ -181,9 +187,6 @@ def apply_triphone_probability_model(words_data, word_list, list_of_extant_triph
     :param words_data:
     """
 
-    if not silent:
-        prints("Applying triphone probability model...")
-
     triphones_per_phone = deal_triphones_by_phone(list_of_extant_triphones)
 
     # Prepare the dictionary
@@ -205,10 +208,16 @@ def apply_triphone_probability_model(words_data, word_list, list_of_extant_triph
             # NaNs will stand for missing data.  So if there's a triphone
             # which exists somewhere, but not for this word or timeframe,
             # then we give it a nan rather than a specific number.
-            phones_data[phone][word] = numpy.nan((int(frame_cap) - 1, len(triphones_per_phone[phone])))
+            phones_data[phone][word] = numpy.empty((
+                int(frame_cap) - 1,
+                len(triphones_per_phone[phone])))
+            phones_data[phone][word][:] = numpy.NAN
 
     # Now that we've preallocated, we go through each word in turn
     for word in word_list:
+
+        if not silent:
+            prints("Applying triphone probability model for {0}...".format(word))
 
         # In the transcript from HVite, the first frame is numbered "frame 1"
         # and it is apparently constrained to be silence.  There are only
@@ -338,5 +347,7 @@ def main(argv):
 # Boilerplate
 if __name__ == "__main__":
     # Log to file
-    with open(get_log_filename(__file__), mode="a", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
-        main(sys.argv)
+    # with open(get_log_filename(__file__), mode="a", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
+    #     main(sys.argv)
+    # Don't log to file
+    main(sys.argv)
