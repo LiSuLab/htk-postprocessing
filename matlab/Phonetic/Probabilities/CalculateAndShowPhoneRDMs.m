@@ -4,9 +4,9 @@ close all;
 %% Paths
 
 % Change these values
-input_dir = fullfile('/Users', 'cai', 'Desktop', 'mat-files');
+input_dir = fullfile('/Users', 'cai', 'Desktop', 'htk-out');
 output_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab-out');
-toolbox_path = fullfile('/Users', 'cai', 'Desktop', 'rsatoolbox-rsagroup');
+toolbox_path = '/Volumes/Cai''s MBP HDD/Documents/Code/Neurolex/rsatoolbox-rsagroup';
 
 chdir(output_dir)
 
@@ -104,34 +104,31 @@ for window_frames = sliding_window_positions
         
         data_for_this_RDM = NaN;
         
-        % We scale the hamming distances by the length of the vector.
-        length_of_vectors_for_this_phone = NaN;
-        
         % The RDMs are word-by-word
         for word_i = 1 : length(word_list)
             this_word = word_list{word_i};
             data_for_this_condition = phones_data.(this_phone).(this_word)(window_frames, :);
             if isnan(data_for_this_RDM)
             	data_for_this_RDM = data_for_this_condition(:)';
-                length_of_vectors_for_this_phone = numel(data_for_this_condition);
             else
                 data_for_this_RDM = cat(1, data_for_this_RDM, data_for_this_condition(:)');
             end%if
         end%for:words
-        
-        % Make sure that everything was set ok
-        assert( ...
-            ~isnan(length_of_vectors_for_this_phone), ...
-            'This should not be a NaN!');
         
         % Compute the distances, and scale it by the length of the vector.
         this_RDM = squareform( ...
             pdist( ...
                 data_for_this_RDM, ...
                 'Correlation'));
+            
+        % Deal with the case where there is no phonetic data for these
+        % frames: we'll just make the RDM all zeros.
+        if isempty(this_RDM)
+           this_RDM = zeros(length(word_list), length(word_list));
+        end
         
         this_rank_transformed_RDM = squareform( ...
-            rsa.util.scale01(tiedrank(this_RDM)));
+            rsa.util.scale01(tiedrank(squareform(this_RDM))));
         
         RDMs(animation_frame_i, phone_i).name = this_RDM_name;
         RDMs(animation_frame_i, phone_i).RDM = this_RDM;
@@ -141,7 +138,7 @@ for window_frames = sliding_window_positions
         RDMs_for_display(animation_frame_i, phone_i).RDM = this_rank_transformed_RDM;
     end%for:phones
     
-    rsa.util.prints('%02d', animation_frame_i);
+    rsa.util.prints('Frame %02d done.', animation_frame_i);
     
     animation_frame_i = animation_frame_i + 1;
 end%for:frames
@@ -166,7 +163,7 @@ end
 %% Save this for now
 
 chdir(output_dir);
-save('triphone-likelihood-RDMs', 'RDMs', '-7.3');
+save('triphone-likelihood-RDMs', 'RDMs', '-v7.3');
 clear RDMs;
 
 %% Show RDMs
