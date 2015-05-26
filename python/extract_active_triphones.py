@@ -220,6 +220,57 @@ def apply_triphone_vector_model(words_data, word_list, list_of_extant_triphones,
     :param words_data:
     """
 
+    # We will specifically ignore some of the phones, as we know there is not
+    # enough data
+    PHONE_LIST = [
+    #    "sil",
+    #    "sp",
+        "aa",
+        "ae",
+        "ah",
+        "ao",
+        "aw",
+    #    "ax",
+        "ay",
+        "b",
+        "ch",
+        "d",
+    #    "dh",
+        "ea",
+        "eh",
+        "er",
+        "ey",
+        "f",
+        "g",
+        "hh",
+        "ia",
+        "ih",
+        "iy",
+        "jh",
+        "k",
+        "l",
+        "m",
+        "n",
+        "ng",
+        "oh",
+        "ow",
+        "oy",
+        "p",
+        "r",
+        "s",
+        "sh",
+        "t",
+        "th",
+    #    "ua",
+        "uh",
+        "uw",
+        "v",
+        "w",
+        "y",
+        "z",
+    #    "zh",
+    ]
+
     if not silent:
         prints("Applying active triphone model...")
 
@@ -227,8 +278,8 @@ def apply_triphone_vector_model(words_data, word_list, list_of_extant_triphones,
 
     # Prepare the dictionary
     phones_data = dict()
-    # Use keys here because some phones (eg 'ax' for Lexpro) may not be present
-    for phone in triphones_per_phone.keys():
+
+    for phone in PHONE_LIST:
 
         # Add the key to the dictionary
         phones_data[phone] = dict()
@@ -256,7 +307,7 @@ def apply_triphone_vector_model(words_data, word_list, list_of_extant_triphones,
             # The list of triphones for this word this frame
             triphone_list = words_data[word][frame_id]
 
-            for phone in triphones_per_phone.keys():
+            for phone in PHONE_LIST:
 
                 # For each possible triphone containing this phone...
                 for triphone_i in range(0, len(triphones_per_phone[phone])):
@@ -347,8 +398,6 @@ def main(argv):
 
     word_list = list(get_word_list(wordlist_filename, silent))
     word_data = get_triphone_lists(input_filename, frame_cap, silent)
-
-    phone_list = ["sil", "sp", "ax", "k", "ao", "d", "ia", "n", "ae", "r", "b", "t", "ea", "p", "l", "ey", "ih", "g", "m", "y", "uh", "s", "ng", "aa", "ow", "sh", "eh", "zh", "iy", "v", "ch", "jh", "ay", "uw", "th", "z", "hh", "er", "oh", "ah", "aw", "oy", "dh", "f", "ua", "w"]
 
     list_of_extant_triphones = look_for_extant_triphones(word_data, word_list, frame_cap, silent)
 
