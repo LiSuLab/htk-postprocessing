@@ -93,7 +93,7 @@ clear filename_parts;
 %% Build RDMs
 
 % Start on the first frame of real RDMs
-animation_frame_i = model_offset_in_timesteps;
+animation_frame_i = 1 + model_offset_in_timesteps;
 
 % We have one RDM for each frame and each phone
 for window_frames = sliding_window_positions

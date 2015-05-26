@@ -1,4 +1,4 @@
-function branching = generate_optimal_hierarchy()
+function [branching, M] = generate_optimal_hierarchy(model_rdms)
 
     import rsa.*
     import rsa.rdm.*
@@ -97,14 +97,11 @@ function branching = generate_optimal_hierarchy()
     output_dir = '/home/cw04/Desktop/hierarchical-models/';
     
     
-    %% Load models
+    %% Models
     
-    rsa.util.prints('Loading RDMs...');
-    all_rdms = rsa.util.directLoad(fullfile(input_dir, 'RDMs.mat'));
+    n_timepoints = size(model_rdms, 1);
     
-    n_timepoints = size(all_rdms, 1);
-    
-    n_entries = numel(rsa.rdm.vectorizeRDM(all_rdms(1, 1).RDM));
+    n_entries = numel(rsa.rdm.vectorizeRDM(model_rdms(1, 1).RDM));
     
     n_phones  = numel(PHONES);
     n_features = numel(FEATURES);
@@ -114,8 +111,8 @@ function branching = generate_optimal_hierarchy()
     for phone_i = 1:n_phones
        % find the all_rdms-index for this phone
        this_phone = PHONES{phone_i};
-       rdm_i = find(ismember({ all_rdms(1, :).phone }, lower(this_phone)));
-       rdms(:, phone_i) = all_rdms(:, rdm_i);
+       rdm_i = find(ismember({ model_rdms(1, :).phone }, lower(this_phone)));
+       rdms(:, phone_i) = model_rdms(:, rdm_i);
     end
     
     clear all_rdms;
