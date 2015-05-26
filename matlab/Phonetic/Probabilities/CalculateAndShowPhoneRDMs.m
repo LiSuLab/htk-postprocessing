@@ -35,8 +35,8 @@ model_offset_in_timesteps = 1;
 
 
 %% Display options
-do_display = false;
-animation_frame_delay = 0.15; % Delay in seconds between successive frames
+do_display = true;
+animation_frame_delay = 0.5; % Delay in seconds between successive frames
 figure_size = [0, 0, 1200, 800];
 
 

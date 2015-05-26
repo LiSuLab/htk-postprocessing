@@ -93,14 +93,14 @@ function branching = generate_optimal_hierarchy()
     
     %% Paths
 
-    input_dir  = '/imaging/cw04/analyses/Lexpro/Phonotopic_mapping/Phonetic_models/pruning-100';
-    output_dir = '/home/cw04/Desktop/hierarchical-models/';
+    input_dir  = '/Users/cai/Desktop/matlab-out';
+    output_dir = '/Users/cai/Desktop/matlab-out-clustered';
     
     
     %% Load models
     
     rsa.util.prints('Loading RDMs...');
-    all_rdms = rsa.util.directLoad(fullfile(input_dir, 'RDMs.mat'));
+    all_rdms = rsa.util.directLoad(fullfile(input_dir, 'triphone-likelihood-RDMs.mat'));
     
     n_timepoints = size(all_rdms, 1);
     
@@ -143,7 +143,7 @@ function branching = generate_optimal_hierarchy()
         % Calculate dynamic distance matrix
         D = dynamic_second_order_distance_matrix(all_model_data, 'mean', 'Spearman');
         chdir(output_dir);
-        save('hierarchy_D', D, '-v7.3');
+        save('hierarchy_D', 'D', '-v7.3');
     end
     
     %% Produce feature-based model-arrangement hypotheses
