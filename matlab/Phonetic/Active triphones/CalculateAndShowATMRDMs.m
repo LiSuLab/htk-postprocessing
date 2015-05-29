@@ -4,9 +4,9 @@ close all;
 %% Paths
 
 % Change these values
-input_dir = fullfile('/Users', 'cai', 'Desktop', 'mat-files');
-output_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab-out');
-toolbox_path = fullfile('/Users', 'cai', 'Desktop', 'rsatoolbox-rsagroup');
+input_dir = '/imaging/cw04/Neurolex/Lexpro/Analysis_Phonetic_mapping/Model_HTK_active_triphone/processed_htk_data';
+output_dir = '/imaging/cw04/Neurolex/Lexpro/Analysis_Phonetic_mapping/Model_HTK_active_triphone';
+toolbox_path = '/imaging/cw04/Neurolex/Lexpro/Analysis_Phonetic_mapping/rsagroup-rsatoolbox';
 
 chdir(output_dir)
 
@@ -35,9 +35,9 @@ model_offset_in_timesteps = 1;
 
 
 %% Display options
-do_display = false;
-animation_frame_delay = 0.15; % Delay in seconds between successive frames
-figure_size = [0, 0, 1200, 800];
+do_display = true;
+animation_frame_delay = 0.5; % Delay in seconds between successive frames
+figure_size = [10, 10, 600, 400];
 
 
 %% Get the list of phones and load in each one

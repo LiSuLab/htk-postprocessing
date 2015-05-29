@@ -1,4 +1,4 @@
-function [branching, M] = generate_optimal_hierarchy(model_rdms)
+function [branching, M] = generate_optimal_hierarchy(model_rdms, output_dir)
 
     import rsa.*
     import rsa.rdm.*
@@ -91,12 +91,6 @@ function [branching, M] = generate_optimal_hierarchy(model_rdms)
     FEATURES{13} = 'SONORANT';
     
     
-    %% Paths
-
-    input_dir  = '/Users/cai/Desktop/matlab-out';
-    output_dir = '/Users/cai/Desktop/matlab-out-clustered';
-    
-    
     %% Models
     
     n_timepoints = size(model_rdms, 1);
@@ -139,8 +133,7 @@ function [branching, M] = generate_optimal_hierarchy(model_rdms)
     else
         % Calculate dynamic distance matrix
         D = dynamic_second_order_distance_matrix(all_model_data, 'mean', 'Spearman');
-        chdir(output_dir);
-        save('hierarchy_D', 'D', '-v7.3');
+        save(fullfile(output_dir, 'hierarchy_D'), 'D', '-v7.3');
     end
     
     %% Produce feature-based model-arrangement hypotheses
@@ -243,27 +236,3 @@ function [branching] = hierarchically_classify_features(remaining_features, rema
     branching = {best_feature, phones_w_feature, phones_wo_feature};
 
 end
-
-
-
-% Given a binary vector representing the presence of absence of a
-% particular feature for each condition, this function returns a model RDM
-% based on that condition.
-%
-% CW 2015-05
-function rdm = binary_categorical_rdm(v)
-
-    n_conditions = numel(v);
-    
-    rdm = zeros(n_conditions, n_conditions);
-    for condition_1 = 1:n_conditions-1
-        for condition_2 = condition_1+2:n_conditions
-            rdm(condition_2, condition_1) = (v(condition_1) ~= v(condition_2));
-        end
-    end
-    
-    rdm = squareform(rdm);
-
-end%function
-
-
