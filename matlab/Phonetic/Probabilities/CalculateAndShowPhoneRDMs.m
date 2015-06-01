@@ -4,8 +4,8 @@ close all;
 %% Paths
 
 % Change these values
-input_dir = fullfile('/Users', 'cai', 'Desktop', 'htk-out');
-output_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab-out');
+input_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd');
+output_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd');
 toolbox_path = '/Volumes/Cai''s MBP HDD/Documents/Code/Neurolex/rsatoolbox-rsagroup';
 
 chdir(output_dir)
@@ -35,7 +35,7 @@ model_offset_in_timesteps = 1;
 
 
 %% Display options
-do_display = true;
+do_display = false;
 animation_frame_delay = 0.5; % Delay in seconds between successive frames
 figure_size = [0, 0, 1200, 800];
 
