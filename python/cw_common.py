@@ -127,22 +127,23 @@ def get_log_filename(filepath):
     return log_filename
 
 
-def prints(*args, sep=' ', end='\n', file=None):
+def prints(*args, sep=' ', end='\n', file=None, flush=False):
     """
-    print(value, ..., sep=' ', end='\n', file=sys.stdout, flush=False)
+    prints(value, ..., sep=' ', end='\n', file=sys.stdout, flush=False)
 
     Prints the values to a stream, or to sys.stdout by default.
 
     Attaches a local timestamp to the start of the output.
 
+    :param args:
     Optional keyword arguments:
-    file:  a file-like object (stream); defaults to the current sys.stdout.
-    sep:   string inserted between values, default a space.
-    end:   string appended after the last value, default a newline.
-    flush: whether to forcibly flush the stream.
+    :param file:  a file-like object (stream); defaults to the current sys.stdout.
+    :param sep:   string inserted between values, default a space.
+    :param end:   string appended after the last value, default a newline.
+    :param flush: whether to forcibly flush the stream.
     """
     timestamp = "[{0}]".format(datetime.now())
-    print(timestamp, *args, sep=sep, end=end, file=file)
+    print(timestamp, *args, sep=sep, end=end, file=file, flush=flush)
 
 
 class ApplicationError(Exception):

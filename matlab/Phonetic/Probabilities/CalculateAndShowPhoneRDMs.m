@@ -4,8 +4,8 @@ close all;
 %% Paths
 
 % Change these values
-input_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd');
-output_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd');
+input_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd', 'phones_data');
+output_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd', 'models');
 toolbox_path = '/Volumes/Cai''s MBP HDD/Documents/Code/Neurolex/rsatoolbox-rsagroup';
 
 chdir(output_dir)
@@ -35,20 +35,22 @@ model_offset_in_timesteps = 1;
 
 
 %% Display options
-do_display = false;
+
+do_display = true;
+
 animation_frame_delay = 0.5; % Delay in seconds between successive frames
 figure_size = [0, 0, 1200, 800];
 
 
 %% Get the list of phones and load in each one
 
+rsa.util.prints('Loading phones data...');
+
 % All files
 chdir(input_dir);
 file_list = dir('*.mat');
 
-% Preallocate
-phone_list = cell(length(file_list), 1);
-phones_data = struct();
+n_frames = length(file_list);
 
 for file_i = 1:length(file_list)
    this_file_name = file_list(file_i).name;
@@ -56,21 +58,26 @@ for file_i = 1:length(file_list)
    % get the phone name
    filename_parts = strsplit(this_file_name, '.');
    filename = filename_parts{1};
-   filename_parts = strsplit(filename, '-');
-   this_phone_name = filename_parts{2};
-   phone_list{file_i} = this_phone_name;
+   this_frame = str2num(filename);
+   
+   frame_data = load(this_file_name);
    
    % load this phone's data
-   phones_data.(this_phone_name) = load(this_file_name);
+   phones_data(this_frame) = frame_data;
 end
 
-%% Get some lists and limits
+phone_list = fields(phones_data(2));
 phone_list = sort(phone_list);
-word_list  = fieldnames(phones_data.(phone_list{1}));
-word_list  = sort(word_list);
+
+n_words = size(phones_data(2).(phone_list{1}), 1);
+
+% Fake the missing data on the first frame. We know it's all zeros anyway.
+for phone_i = 1:numel(phone_list)
+    phone = phone_list{phone_i};
+    phones_data(1).(phone) = nan(n_words,1);
+end
 
 %% Sliding window setup
-n_frames = size(phones_data.(phone_list{1}).(word_list{1}), 1);
 
 sliding_window_positions = [];
 for first_frame_in_window = 1:sliding_window_step:n_frames
@@ -81,14 +88,6 @@ for first_frame_in_window = 1:sliding_window_step:n_frames
         break;
     end
 end
-
-%% Clear some things out
-clear this_phone_name;
-clear this_file_name;
-clear file_i;
-clear file_list;
-clear filename;
-clear filename_parts;
 
 %% Build RDMs
 
@@ -102,29 +101,26 @@ for window_frames = sliding_window_positions
         
         this_RDM_name = sprintf('%s frame%d', this_phone, animation_frame_i);
         
-        data_for_this_RDM = NaN;
+        data_for_this_RDM = [];
+        for window_frame = window_frames'
+            data_this_frame = phones_data(window_frame).(this_phone);
+            if ~all(isnan(data_this_frame))
+                data_for_this_RDM = [ ...
+                    data_for_this_RDM, ...
+                    ];
+            end
+        end
         
-        % The RDMs are word-by-word
-        for word_i = 1 : length(word_list)
-            this_word = word_list{word_i};
-            data_for_this_condition = phones_data.(this_phone).(this_word)(window_frames, :);
-            if isnan(data_for_this_RDM)
-            	data_for_this_RDM = data_for_this_condition(:)';
-            else
-                data_for_this_RDM = cat(1, data_for_this_RDM, data_for_this_condition(:)');
-            end%if
-        end%for:words
-        
-        % Compute the distances, and scale it by the length of the vector.
-        this_RDM = squareform( ...
-            pdist( ...
-                data_for_this_RDM, ...
-                'Correlation'));
-            
-        % Deal with the case where there is no phonetic data for these
-        % frames: we'll just make the RDM all zeros.
-        if isempty(this_RDM)
-           this_RDM = zeros(length(word_list), length(word_list));
+        % Sometimes all the data is nan, because there is no data whatsoever.
+        % In this case we constrain the RDMs to be all-zeros.
+        if isempty(data_for_this_RDM)
+            this_RDM = zeros(n_words, n_words);
+        else
+            % Compute the distances, and scale it by the length of the vector.
+            this_RDM = squareform( ...
+                pdist( ...
+                    data_for_this_RDM, ...
+                    'Correlation'));
         end
         
         this_rank_transformed_RDM = squareform( ...
