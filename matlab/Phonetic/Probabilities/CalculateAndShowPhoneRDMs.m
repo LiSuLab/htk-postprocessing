@@ -104,17 +104,18 @@ for window_frames = sliding_window_positions
         data_for_this_RDM = [];
         for window_frame = window_frames'
             data_this_frame = phones_data(window_frame).(this_phone);
-            if ~all(isnan(data_this_frame))
-                data_for_this_RDM = [ ...
-                    data_for_this_RDM, ...
-                    ];
-            end
+            data_for_this_RDM = [ ...
+                data_for_this_RDM, ...
+                data_this_frame];
         end
         
-        % Sometimes all the data is nan, because there is no data whatsoever.
-        % In this case we constrain the RDMs to be all-zeros.
-        if isempty(data_for_this_RDM)
-            this_RDM = zeros(n_words, n_words);
+        % check if pdist can possibly wory
+        no_data = all(all(isnan(data_for_this_RDM)));
+        data_overlap = sum(data_for_this_RDM, 1);
+        no_overlapping_data = all(isnan(data_overlap));
+        
+        if no_data || no_overlapping_data
+            this_RDM = 1 - eye(n_words, n_words);
         else
             % Compute the distances, and scale it by the length of the vector.
             this_RDM = squareform( ...
@@ -221,7 +222,7 @@ if do_display
 
         end%for
 
-        disp(frame);
+        rsa.util.prints('Figures for frame %d stored in memory.', frame);
     end%for:frames
 
     % Save animated gifs

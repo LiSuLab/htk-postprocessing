@@ -53,7 +53,7 @@ def get_triphone_probability_lists(input_filename, frame_cap, silent):
         # The list of triphone-probability pairs
         r"(?P<triphone_probability_pair_list>.+)$"))
 
-    word_data = dict()
+    triphone_probability_lists = dict()
 
     # None value will be replaced by each word as it is read from the input stream
     current_word = None
@@ -84,7 +84,7 @@ def get_triphone_probability_lists(input_filename, frame_cap, silent):
                 # want to store all the appropriate data before we start
                 # on a new word
                 if current_word is not None:
-                    word_data[current_word] = current_word_data
+                    triphone_probability_lists[current_word] = current_word_data
 
                 # Now that everything we were trying to remember is written
                 # down, we can start a new page
@@ -124,15 +124,17 @@ def get_triphone_probability_lists(input_filename, frame_cap, silent):
                 # We add what we've got to the current word's data
                 current_word_data[frame_id] = dict()
                 for tpp in triphone_probability_pairs:
+                    # dict entry is keyed by a triphone, and the value is the
+                    # likelihood.
                     current_word_data[frame_id][tpp[0]] = tpp[1]
 
     # When the file is over, we just have to store the last word's data and
     # we're done
-    word_data[current_word] = current_word_data
+    triphone_probability_lists[current_word] = current_word_data
     if not silent:
         print("") # For the newline
 
-    return word_data
+    return triphone_probability_lists
 
 
 # noinspection PyUnusedLocal
@@ -164,7 +166,7 @@ def process_args(switches, parameters, commands):
     return silent, log, input_filename, output_dir, wordlist_filename, frame_cap
 
 
-def apply_triphone_probability_model(triphone_probability_lists, word_list, PHONE_LIST, used_triphones, frame_cap, silent):
+def apply_triphone_probability_model(triphone_probability_lists, word_list, PHONE_LIST, used_triphones_overall, frame_cap, silent):
     """
     The active triphone vector model will be calculated as follows.
 
@@ -177,13 +179,15 @@ def apply_triphone_probability_model(triphone_probability_lists, word_list, PHON
     So to be returned is a frame_id-keyed dictionary of phone-keyed dictionaries
     of word-by-triphone probability matrices.
 
+    :param used_triphones_overall:
     :param PHONE_LIST:
-    :param used_triphones:
     :param silent:
     :param frame_cap:
     :param word_list:
     :param triphone_probability_lists:
     """
+
+    triphones_per_phone = deal_triphones_by_phone(used_triphones_overall)
 
     # In the transcript from HVite, the first frame is numbered "frame 1"
     # and it is apparently constrained to be silence.  There are only
@@ -199,35 +203,29 @@ def apply_triphone_probability_model(triphone_probability_lists, word_list, PHON
 
         likelihood_data[frame_id] = dict()
 
-        triphones_used_this_frame = used_triphones[frame_id]
-        triphones_per_phone = deal_triphones_by_phone(triphones_used_this_frame)
-
         for phone in PHONE_LIST:
 
-            # Not all phones may be present at ever frame, in which
-            # case we just return an empty list.
-            triphones_this_phone = triphones_per_phone.get(phone, [])
+            triphones_this_phone = triphones_per_phone[phone]
 
-            if len(triphones_this_phone) > 0:
-                likelihood_data[frame_id][phone] = numpy.empty((
-                    len(word_list),
-                    len(triphones_this_phone)))
-                likelihood_data[frame_id][phone][:] = numpy.nan
+            # We pre-fill everything with nans, which can be treated as missing
+            # data if it doesn't get covered up by real numbers
+            likelihood_data[frame_id][phone] = numpy.empty((
+                len(word_list),
+                len(triphones_this_phone)))
+            likelihood_data[frame_id][phone][:] = numpy.nan
 
-                for word_i in range(0, len(word_list)):
-                    word = word_list[word_i]
+            for word_i in range(0, len(word_list)):
+                word = word_list[word_i]
 
-                    for triphone_i in range(0, len(triphones_this_phone)):
-                        triphone = triphones_this_phone[triphone_i]
-                        # Get the likelihood out of the words data
-                        likelihood_data[frame_id][phone][word_i][triphone_i] = triphone_probability_lists[word][frame_id][triphone]
-            else:
-                # If there are no triphones for this phone, we just list some
-                # nans, so it can at least be detected later.
-                likelihood_data[frame_id][phone] = numpy.empty((
-                    len(word_list),
-                    1))
-                likelihood_data[frame_id][phone][:] = numpy.nan
+                for triphone_i in range(0, len(triphones_this_phone)):
+                    triphone = triphones_this_phone[triphone_i]
+
+                    # See if there is likelihood data for this word and phone
+                    # at this frame.
+                    triphone_likelihood = triphone_probability_lists[word][frame_id].get(triphone, None)
+
+                    if triphone_likelihood is not None:
+                        likelihood_data[frame_id][phone][word_i][triphone_i] = triphone_likelihood
 
     return likelihood_data
 
@@ -249,7 +247,10 @@ This function will return a frame_id-keyed dictionary lists of triphones.
     # I guess lazy instantiation wasn't so smart :[
     local_word_list = list(word_list)
 
-    used_triphones = dict()
+    # TODO BUG: this isn't working yet!!
+    used_triphones_by_frames = dict()
+
+    used_triphones_overall = set()
 
     # In the transcript from HVite, the first frame is numbered
     # "frame 1" and it is apparently constrained to be silence.
@@ -280,9 +281,11 @@ This function will return a frame_id-keyed dictionary lists of triphones.
             else:
                 triphone_list = list(set(triphone_list).intersection(set(triphones)))
 
-        used_triphones[frame_id] = triphone_list
+            used_triphones_overall = used_triphones_overall.union(set(triphone_list))
 
-    return used_triphones
+        used_triphones_by_frames[frame_id] = triphone_list
+
+    return used_triphones_by_frames, used_triphones_overall
 
 
 def save_features(likelihood_data, PHONE_LIST, output_dir, frame_cap, silent=False):
@@ -308,6 +311,26 @@ def save_features(likelihood_data, PHONE_LIST, output_dir, frame_cap, silent=Fal
             # savemat requires a dictionary here
             likelihood_data[frame_id],
             appendmat=True)
+
+
+def show_average_triphone_counts(triphone_probability_lists, word_list, frame_cap):
+    """
+    Shows the averge-over-words number of triphones available per frame.
+    :param word_list:
+    :param triphone_probability_lists: a word-keyed dictionary of frame_id-keyed dictionaries of triphone-keyed dicttionaries of likelihood values.
+    :param frame_cap:
+    :return:
+    """
+    for frame in range(2, int(frame_cap) + 1):
+        frame_id = str(frame)
+        total_triphone_count = 0
+        for word in word_list:
+            triphones_this_word = list(triphone_probability_lists[word][frame_id].keys())
+            triphone_count_this_word = len(triphones_this_word)
+            prints("    {0} for {1}".format(triphone_count_this_word, word))
+            total_triphone_count += triphone_count_this_word
+        average_triphone_count = total_triphone_count / len(word_list)
+        prints("The average number of triphones active in frame {0:02d} is {1}.".format(frame, average_triphone_count))
 
 
 def main(argv):
@@ -378,10 +401,12 @@ def main(argv):
 
     triphone_probability_lists = get_triphone_probability_lists(input_filename, frame_cap, silent)
 
-    used_triphones = which_triphones_are_used(triphone_probability_lists, word_list, frame_cap, silent)
+    show_average_triphone_counts(triphone_probability_lists, word_list, frame_cap)
 
-    likelihood_data = apply_triphone_probability_model(triphone_probability_lists, word_list, PHONE_LIST, used_triphones, frame_cap, silent)
-    
+    used_triphones_by_frames, used_triphones_overall = which_triphones_are_used(triphone_probability_lists, word_list, frame_cap, silent)
+
+    likelihood_data = apply_triphone_probability_model(triphone_probability_lists, word_list, PHONE_LIST,  used_triphones_overall, frame_cap, silent)
+
     save_features(likelihood_data, PHONE_LIST, output_dir, frame_cap, silent)
 
     if not silent:
