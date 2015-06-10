@@ -24,7 +24,7 @@ userOptions.rootPath = '';
 %% Model options
 
 % Width of the sliding window in frames.
-sliding_window_width = 3;
+sliding_window_width = 6;
 
 % Step of the sliding window in frames.
 sliding_window_step = 1;
@@ -36,7 +36,7 @@ model_offset_in_timesteps = 1;
 
 %% Display options
 
-do_display = true;
+do_display = false;
 
 animation_frame_delay = 0.5; % Delay in seconds between successive frames
 figure_size = [0, 0, 1200, 800];

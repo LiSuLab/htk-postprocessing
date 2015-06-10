@@ -195,7 +195,7 @@ def apply_triphone_probability_model(triphone_probability_lists, word_list, PHON
     # So, we start at 2 (because that's where the data is) and we add 1
     # (because the frames are 1-indexed).
     likelihood_data = dict()
-    for frame in range(2, int(frame_cap) + 1):
+    for frame in irange(2, int(frame_cap)):
         frame_id = str(frame)
 
         if not silent:
@@ -257,7 +257,7 @@ This function will return a frame_id-keyed dictionary lists of triphones.
     # There are only active triphones from frame 2 onwards.
     # So, we start at 2 (because that's where the data is) and we add 1
     # (because the frames are 1-indexed).
-    for frame in range(2, int(frame_cap) + 1):
+    for frame in irange(2, int(frame_cap)):
         frame_id = str(frame)
 
         if not silent:
@@ -274,21 +274,21 @@ This function will return a frame_id-keyed dictionary lists of triphones.
 
             # For the first word, we will just take the list of triphones as is
             if triphone_list is None:
-                triphone_list = triphones
+                triphone_list = list(triphones)
             # For the rest of the words we will intersect the list of triphones
             # so that by the end of it we only have triphones common to ALL
             # words.
             else:
                 triphone_list = list(set(triphone_list).intersection(set(triphones)))
 
-            used_triphones_overall = used_triphones_overall.union(set(triphone_list))
+            used_triphones_overall = list(set(used_triphones_overall).union(set(triphone_list)))
 
         used_triphones_by_frames[frame_id] = triphone_list
 
     return used_triphones_by_frames, used_triphones_overall
 
 
-def save_features(likelihood_data, PHONE_LIST, output_dir, frame_cap, silent=False):
+def save_features(likelihood_data, output_dir, frame_cap, silent=False):
     """
     Saves the data in a Matlab-readable format.
     This will be a phone-keyed dictionary of
@@ -302,7 +302,7 @@ def save_features(likelihood_data, PHONE_LIST, output_dir, frame_cap, silent=Fal
     if not silent:
         prints("Saving features to {0}".format(output_dir))
 
-    for frame in range(2, int(frame_cap) + 1):
+    for frame in irange(2, int(frame_cap)):
         frame_id = str(frame)
         scipy.io.savemat(
             os.path.join(
@@ -321,13 +321,12 @@ def show_average_triphone_counts(triphone_probability_lists, word_list, frame_ca
     :param frame_cap:
     :return:
     """
-    for frame in range(2, int(frame_cap) + 1):
+    for frame in irange(2, int(frame_cap)):
         frame_id = str(frame)
         total_triphone_count = 0
         for word in word_list:
             triphones_this_word = list(triphone_probability_lists[word][frame_id].keys())
             triphone_count_this_word = len(triphones_this_word)
-            prints("    {0} for {1}".format(triphone_count_this_word, word))
             total_triphone_count += triphone_count_this_word
         average_triphone_count = total_triphone_count / len(word_list)
         prints("The average number of triphones active in frame {0:02d} is {1}.".format(frame, average_triphone_count))
@@ -407,7 +406,7 @@ def main(argv):
 
     likelihood_data = apply_triphone_probability_model(triphone_probability_lists, word_list, PHONE_LIST,  used_triphones_overall, frame_cap, silent)
 
-    save_features(likelihood_data, PHONE_LIST, output_dir, frame_cap, silent)
+    save_features(likelihood_data, output_dir, frame_cap, silent)
 
     if not silent:
         prints("==== DONE! =======")

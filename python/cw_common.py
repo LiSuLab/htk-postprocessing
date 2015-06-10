@@ -47,6 +47,16 @@ def parse_args(args):
     return switches, parameters, commands
 
 
+def irange(mi, ma):
+    """
+    inclusive range, returns range(mi, ma+1)
+    :param mi:
+    :param ma:
+    :return:
+    """
+    return range(mi, ma+1)
+
+
 def Nones(l):
     """
     Produces a list of None of the specified length l
