@@ -4,15 +4,12 @@ close all;
 %% Paths
 
 % Change these values
-input_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab-out');
-output_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab-out-again');
-toolbox_path = fullfile('/Volumes/Cai''s MBP HDD/Documents/Code/Neurolex/RSA-MEG');
+input_dir = '/Users/cai/Desktop/cwd/models';
+output_dir = '/Users/cai/Desktop/cwd/models';
 
 chdir(output_dir)
 mkdir('Figures');
 figures_dir = fullfile(output_dir, 'Figures');
-
-addpath(genpath(toolbox_path));
 
 
 %% UserOptions
@@ -114,7 +111,7 @@ for frame = 1:n_frames
         
     % Calculate and show a second order matrix
     % TODO: Don't use Spearman here, use a signed-rank test
-    RDM_d_matrix_this_frame = RDMCorrMat(RDMs(frame, :), 1, 'Spearman');
+    RDM_d_matrix_this_frame = rsa.stat.RDMCorrMat(RDMs(frame, :), 1, 'Spearman');
     
     %% MDS RDMs
     
@@ -136,7 +133,7 @@ for frame = 1:n_frames
         % Continue with previous positions
         MDS_options_extra.initialPositions = pats_mds_2D;
     end
-    pats_mds_2D = MDSRDMs({phone_free_RDMs(frame, :)}, MDS_options, MDS_options_extra);
+    pats_mds_2D = rsa.MDSRDMs({phone_free_RDMs(frame, :)}, MDS_options, MDS_options_extra);
     
     %% Adjust figure
     

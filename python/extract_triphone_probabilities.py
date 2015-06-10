@@ -293,7 +293,6 @@ def save_features(likelihood_data, output_dir, frame_cap, silent=False):
     Saves the data in a Matlab-readable format.
     This will be a phone-keyed dictionary of
     :param likelihood_data:
-    :param PHONE_LIST:
     :param output_dir:
     :param frame_cap:
     :param silent:
