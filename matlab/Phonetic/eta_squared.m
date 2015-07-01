@@ -14,7 +14,7 @@ for t = 1:n_timepoints
     end
 end
 
-etasquared_s = nan(n_features, n_timepoints);
+etasquareds = nan(n_features, n_timepoints);
 
 for t = 1:n_timepoints
     
@@ -83,9 +83,12 @@ for t = 1:n_timepoints
         ss_total = ss_within + ss_between;
         
         if ss_total ~= 0
-            etasquared_s(feature_i, t) = ss_between/ss_total;
+            etasquareds(feature_i, t) = ss_between/ss_total;
         end
 
     end%for:feature_i
 
 end%for:t
+
+rsa.util.prints('Done!');
+
