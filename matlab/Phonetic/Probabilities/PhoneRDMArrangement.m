@@ -18,6 +18,7 @@ userOptions.saveFiguresJpg = false;
 userOptions.displayFigures = false;
 userOptions.analysisName = 'triphone-likelihood';
 userOptions.rootPath = output_dir;
+userOptions.RDMCorrelationType = 'Spearman';
 
 
 %% Other options
@@ -112,6 +113,7 @@ for frame = 1:n_frames
     % Calculate and show a second order matrix
     % TODO: Don't use Spearman here, use a signed-rank test
     RDM_d_matrix_this_frame = rsa.stat.RDMCorrMat(RDMs(frame, :), 1, 'Spearman');
+    colormap(jet);
     
     %% MDS RDMs
     
@@ -126,14 +128,7 @@ for frame = 1:n_frames
     MDS_options_extra.dMatrix = RDM_d_matrix_this_frame;
     
     % Do the MDS
-    if isnan(pats_mds_2D)
-        % Start at random positions
-        MDS_options_extra.initialPositions = 'random';
-    else
-        % Continue with previous positions
-        MDS_options_extra.initialPositions = pats_mds_2D;
-    end
-    pats_mds_2D = rsa.MDSRDMs({phone_free_RDMs(frame, :)}, MDS_options, MDS_options_extra);
+    rsa.MDSRDMs({phone_free_RDMs(frame, :)}, MDS_options, MDS_options_extra);
     
     %% Adjust figure
     

@@ -16,7 +16,7 @@ addpath(genpath(toolbox_path));
 %% Options
 
 % Whether or not to go through with displaying the RDMs.
-do_display = true;
+do_display = false;
 
 % Width of the sliding window in frames.
 sliding_window_width = 6;
@@ -153,6 +153,7 @@ end%for:frames
 
 chdir(output_dir);
 save('triphone-likelihood-RDMs', 'RDMs', '-v7.3');
+phonetic_model_RDMs = RDMs;
 clear RDMs;
 
 %% Show RDMs
