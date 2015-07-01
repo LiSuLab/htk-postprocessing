@@ -4,9 +4,9 @@ close all;
 %% Paths
 
 % Change these values
-input_dir = '/imaging/cw04/Neurolex/Lexpro/Analysis_Phonetic_mapping/Model_HTK_active_triphone/processed_htk_data';
-output_dir = '/imaging/cw04/Neurolex/Lexpro/Analysis_Phonetic_mapping/Model_HTK_active_triphone';
-toolbox_path = '/imaging/cw04/Neurolex/Lexpro/Analysis_Phonetic_mapping/rsagroup-rsatoolbox';
+input_dir = '/Users/cai/Desktop/cwd_binary';
+output_dir = '/Users/cai/Desktop/cwd_binary';
+toolbox_path = '/Volumes/Cai''s MBP HDD/Documents/Code/Neurolex/rsatoolbox-rsagroup';
 
 chdir(output_dir)
 
@@ -24,7 +24,7 @@ userOptions.rootPath = '';
 %% Model options
 
 % Width of the sliding window in frames.
-sliding_window_width = 3;
+sliding_window_width = 6;
 
 % Step of the sliding window in frames.
 sliding_window_step = 1;

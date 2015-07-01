@@ -4,8 +4,8 @@ close all;
 %% Paths
 
 % Change these values
-input_dir = fullfile('/Users', 'cai', 'Desktop', 'htk-out');
-output_dir = fullfile('/Users', 'cai', 'Desktop', 'matlab-out');
+input_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd', 'phones_data');
+output_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd', 'models');
 toolbox_path = '/Volumes/Cai''s MBP HDD/Documents/Code/Neurolex/rsatoolbox-rsagroup';
 
 chdir(output_dir)
@@ -13,42 +13,40 @@ chdir(output_dir)
 addpath(genpath(toolbox_path));
 
 
-%% UserOptions
-userOptions = struct();
-userOptions.saveFiguresJpg = true;
-userOptions.displayFigures = false;
-userOptions.analysisName = 'triphone-likelihood';
-userOptions.rootPath = '';
+%% Options
 
-
-%% Model options
+% Whether or not to go through with displaying the RDMs.
+do_display = true;
 
 % Width of the sliding window in frames.
-sliding_window_width = 3;
+sliding_window_width = 6;
 
 % Step of the sliding window in frames.
 sliding_window_step = 1;
 
-% The first frame of the models isn't 0ms, it's 10ms, so we record that
-% here so we can pad the beginning with zeros.
-model_offset_in_timesteps = 1;
+% The frame_id of the first usable frame.
+first_usable_htk_frame = 5;
 
+% Convert an htk frame id into a time index for the start of the frame.
+htk_frame_to_ms = @(htk_frame_id) (htk_frame_id*10)-10;
 
-%% Display options
-do_display = true;
-animation_frame_delay = 0.5; % Delay in seconds between successive frames
-figure_size = [0, 0, 1200, 800];
+% Delay in seconds between successive frames.
+animation_frame_delay = 0.5;
+
+% The position of the figures if they're displayed.
+figure_size = [10, 10, 800, 600];
 
 
 %% Get the list of phones and load in each one
+
+rsa.util.prints('Loading phones data...');
 
 % All files
 chdir(input_dir);
 file_list = dir('*.mat');
 
-% Preallocate
-phone_list = cell(length(file_list), 1);
-phones_data = struct();
+% Wow this is an ugly hack.
+last_frame_id = str2num(file_list(end).name(1:2));
 
 for file_i = 1:length(file_list)
    this_file_name = file_list(file_i).name;
@@ -56,79 +54,87 @@ for file_i = 1:length(file_list)
    % get the phone name
    filename_parts = strsplit(this_file_name, '.');
    filename = filename_parts{1};
-   filename_parts = strsplit(filename, '-');
-   this_phone_name = filename_parts{2};
-   phone_list{file_i} = this_phone_name;
+   this_htk_frame = str2num(filename);
+   
+   % We're going to skip these frames
+   if this_htk_frame < first_usable_htk_frame
+       continue;
+   end
+   
+   % If we're using this frame, we give it a name
+   frame_id = sprintf('frame_%2.2d', this_htk_frame);
+   
+   frame_data = load(this_file_name);
    
    % load this phone's data
-   phones_data.(this_phone_name) = load(this_file_name);
+   phones_data.(frame_id) = frame_data;
 end
 
-%% Get some lists and limits
+phone_list = fields(phones_data.(sprintf('frame_%2.2d', first_usable_htk_frame)));
 phone_list = sort(phone_list);
-word_list  = fieldnames(phones_data.(phone_list{1}));
-word_list  = sort(word_list);
+
+n_words = size(phones_data.(sprintf('frame_%2.2d', first_usable_htk_frame)).(phone_list{1}), 1);
 
 %% Sliding window setup
-n_frames = size(phones_data.(phone_list{1}).(word_list{1}), 1);
 
+% The sliding window position refer to htk frames.
 sliding_window_positions = [];
-for first_frame_in_window = 1:sliding_window_step:n_frames
+window_starting_points = first_usable_htk_frame:sliding_window_step:last_frame_id;
+for first_frame_in_window = window_starting_points
     this_window = (first_frame_in_window:first_frame_in_window+sliding_window_width-1)';
-    if max(this_window) <= n_frames
+    if max(this_window) <= last_frame_id
         sliding_window_positions = [sliding_window_positions, this_window];
     else
         break;
     end
 end
 
-%% Clear some things out
-clear this_phone_name;
-clear this_file_name;
-clear file_i;
-clear file_list;
-clear filename;
-clear filename_parts;
-
 %% Build RDMs
 
 % Start on the first frame of real RDMs
-animation_frame_i = model_offset_in_timesteps;
+animation_frame_i = 1;
 
 % We have one RDM for each frame and each phone
 for window_frames = sliding_window_positions
     for phone_i = 1 : length(phone_list)
         this_phone = phone_list{phone_i};
         
-        this_RDM_name = sprintf('%s frame%d', this_phone, animation_frame_i);
-        
-        data_for_this_RDM = NaN;
-        
-        % The RDMs are word-by-word
-        for word_i = 1 : length(word_list)
-            this_word = word_list{word_i};
-            data_for_this_condition = phones_data.(this_phone).(this_word)(window_frames, :);
-            if isnan(data_for_this_RDM)
-            	data_for_this_RDM = data_for_this_condition(:)';
-            else
-                data_for_this_RDM = cat(1, data_for_this_RDM, data_for_this_condition(:)');
-            end%if
-        end%for:words
-        
-        % Compute the distances, and scale it by the length of the vector.
-        this_RDM = squareform( ...
-            pdist( ...
+        data_for_this_RDM = [];
+        for window_frame = window_frames'
+            window_frame_id = sprintf('frame_%2.2d', window_frame);
+            data_this_frame = phones_data.(window_frame_id).(this_phone);
+            data_for_this_RDM = [ ...
                 data_for_this_RDM, ...
-                'Correlation'));
+                data_this_frame];
+        end
+        
+        % check if pdist can possibly wory
+        no_data = all(all(isnan(data_for_this_RDM)));
+        data_overlap = sum(data_for_this_RDM, 1);
+        no_overlapping_data = all(isnan(data_overlap));
+        
+        if no_data || no_overlapping_data
+            this_RDM = 1 - eye(n_words, n_words);
+        else
+            % remove nans
+            data_for_this_RDM = data_for_this_RDM(:, ~isnan(data_overlap));
             
-        % Deal with the case where there is no phonetic data for these
-        % frames: we'll just make the RDM all zeros.
-        if isempty(this_RDM)
-           this_RDM = zeros(length(word_list), length(word_list));
+            % Compute the distances, and scale it by the length of the vector.
+            this_RDM = squareform( ...
+                pdist( ...
+                    data_for_this_RDM, ...
+                    'Correlation'));
         end
         
         this_rank_transformed_RDM = squareform( ...
             rsa.util.scale01(tiedrank(squareform(this_RDM))));
+        
+        this_RDM_name = sprintf( ...
+            '%s window [%dms-%dms]', ...
+            this_phone, ...
+            htk_frame_to_ms(window_frames(1)), ...
+            ...%+1 because we want to list the time index of the end of the window.
+            htk_frame_to_ms(window_frames(end)+1));
         
         RDMs(animation_frame_i, phone_i).name = this_RDM_name;
         RDMs(animation_frame_i, phone_i).RDM = this_RDM;
@@ -142,23 +148,6 @@ for window_frames = sliding_window_positions
     
     animation_frame_i = animation_frame_i + 1;
 end%for:frames
-
-% Finally we start the animation with the appropriate number of padding
-% frames.
-for animation_frame_i = 1:model_offset_in_timesteps
-    for phone_i = 1:length(phone_list)
-        this_phone = phone_list{phone_i};
-        this_RDM_name = sprintf('%s frame%d (padding)', this_phone, animation_frame_i);
-        RDMs(animation_frame_i, phone_i).name  = this_RDM_name;
-        RDMs(animation_frame_i, phone_i).phone = this_phone;
-        % Wow, this is fragile and uses Matlab's horrible scope breaking!
-        RDMs(animation_frame_i, phone_i).RDM   = zeros(size(this_RDM));
-        
-        RDMs_for_display(animation_frame_i, phone_i).name = this_RDM_name;
-        % Wow, this is fragile and uses Matlab's horrible scope breaking!
-        RDMs_for_display(animation_frame_i, phone_i).RDM  = zeros(size(this_RDM));
-    end
-end
 
 %% Save this for now
 
@@ -225,7 +214,7 @@ if do_display
 
         end%for
 
-        disp(frame);
+        rsa.util.prints('Figures for frame %d stored in memory.', frame);
     end%for:frames
 
     % Save animated gifs
