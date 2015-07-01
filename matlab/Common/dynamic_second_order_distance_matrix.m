@@ -1,3 +1,5 @@
+% Returns a ltv-form distance matrix.
+%
 % CW 2015-05
 function D = dynamic_second_order_distance_matrix(all_model_data, aggregate, disttype)
 
