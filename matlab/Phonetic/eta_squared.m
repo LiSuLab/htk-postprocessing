@@ -14,7 +14,7 @@ for t = 1:n_timepoints
     end
 end
 
-etasquared_s = nan(n_timepoints, 1);
+etasquared_s = nan(n_features, n_timepoints);
 
 for t = 1:n_timepoints
     
@@ -83,9 +83,9 @@ for t = 1:n_timepoints
         ss_total = ss_within + ss_between;
         
         if ss_total ~= 0
-            etasquared_s(t) = ss_between/ss_total;
+            etasquared_s(feature_i, t) = ss_between/ss_total;
         end
 
-    end
+    end%for:feature_i
 
-end
+end%for:t
