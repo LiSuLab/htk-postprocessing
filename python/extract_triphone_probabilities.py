@@ -403,6 +403,14 @@ def main(argv):
 
     used_triphones_by_frames, used_triphones_overall = which_triphones_are_used(triphone_probability_lists, word_list, frame_cap, silent)
 
+    scipy.io.savemat(
+        os.path.join(
+            output_dir,
+            "used_triphones"),
+        # savemat requires a dictionary here
+        used_triphones_by_frames,
+        appendmat=True)
+
     likelihood_data = apply_triphone_probability_model(triphone_probability_lists, word_list, PHONE_LIST,  used_triphones_overall, frame_cap, silent)
 
     save_features(likelihood_data, output_dir, frame_cap, silent)
