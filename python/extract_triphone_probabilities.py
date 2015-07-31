@@ -203,7 +203,7 @@ def apply_triphone_probability_model(triphone_probability_lists, word_list, PHON
 
         likelihood_data[frame_id] = dict()
 
-        for phone in PHONE_LIST:
+        for phone in triphones_per_phone.keys():
 
             triphones_this_phone = triphones_per_phone[phone]
 
