@@ -42,6 +42,7 @@ def get_triphone_probability_lists(input_filename, frame_cap, silent):
 
     # Regular expression for the path of a word
     word_path_re = re.compile(r"^File: (?P<word_path>.+)\.mfc$")
+    word_path_re_dnn = re.compile(r"^File: (?P<word_path>.+)\.fbk$")
 
     # Regular expression for frame and list of active triphones
     frame_data_re = re.compile((
@@ -67,7 +68,7 @@ def get_triphone_probability_lists(input_filename, frame_cap, silent):
     with open(input_filename, encoding="utf-8") as input_file:
         # Go through the file line by line
         for line in input_file:
-            word_path_match = word_path_re.match(line)
+            word_path_match = word_path_re_dnn.match(line)
             frame_data_match = frame_data_re.match(line)
 
             # So what's up with this line we've just read?
@@ -388,6 +389,58 @@ def main(argv):
     #    "zh",
     ]
     #endregion
+    #region PHONE_LIST_DNN = [ ... ]
+    PHONE_LIST_DNN = [
+        #"sil",
+        "aa",
+        "ae",
+        "ah",
+        "ao",
+        "aw",
+        "ax",
+        "ay",
+        "b",
+        "ch",
+        "d",
+        "dh",
+        "ea",
+        "eh",
+        "el",
+        "em",
+        "en",
+        "er",
+        "ey",
+        "f",
+        "g",
+        "hh",
+        "ia",
+        "ih",
+        "iy",
+        "jh",
+        "k",
+        "l",
+        "m",
+        "n",
+        "ng",
+        "oh",
+        "ow",
+        "oy",
+        "p",
+        "r",
+        "s",
+        "sh",
+        "t",
+        "th",
+        "ua",
+        "uh",
+        "uw",
+        "v",
+        "w",
+        "y",
+        "z",
+        "zh",
+    ]
+    #endregion
 
     (switches, parameters, commands) = parse_args(argv)
     (silent, log, input_filename, output_dir, wordlist_filename, frame_cap) = process_args(switches, parameters, commands)
@@ -411,7 +464,7 @@ def main(argv):
         used_triphones_by_frames,
         appendmat=True)
 
-    likelihood_data = apply_triphone_probability_model(triphone_probability_lists, word_list, PHONE_LIST,  used_triphones_overall, frame_cap, silent)
+    likelihood_data = apply_triphone_probability_model(triphone_probability_lists, word_list, PHONE_LIST_DNN,  used_triphones_overall, frame_cap, silent)
 
     save_features(likelihood_data, output_dir, frame_cap, silent)
 
