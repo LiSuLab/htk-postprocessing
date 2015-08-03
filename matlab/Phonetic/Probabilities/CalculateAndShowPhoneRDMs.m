@@ -4,8 +4,8 @@ close all;
 %% Paths
 
 % Change these values
-input_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd', 'phones_data');
-output_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd', 'models');
+input_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd_dnn', 'phones_data');
+output_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd_dnn', 'models');
 toolbox_path = '/Volumes/Cai''s MBP HDD/Documents/Code/Neurolex/rsatoolbox-rsagroup';
 
 chdir(output_dir)
@@ -16,7 +16,7 @@ addpath(genpath(toolbox_path));
 %% Options
 
 % Whether or not to go through with displaying the RDMs.
-do_display = false;
+do_display = true;
 
 % Width of the sliding window in frames.
 sliding_window_width = 6;
@@ -25,7 +25,7 @@ sliding_window_width = 6;
 sliding_window_step = 1;
 
 % The frame_id of the first usable frame.
-first_usable_htk_frame = 5;
+first_usable_htk_frame = 2;
 
 % Convert an htk frame id into a time index for the start of the frame.
 htk_frame_to_ms = @(htk_frame_id) (htk_frame_id*10)-10;
@@ -46,7 +46,9 @@ chdir(input_dir);
 file_list = dir('*.mat');
 
 % Wow this is an ugly hack.
-last_frame_id = str2num(file_list(end).name(1:2));
+% -1 is a SUPER FRAGILE hack to remove the last thing in list, which isn't
+% actually a frame data file.
+last_frame_id = str2num(file_list(end-1).name(1:2));
 
 for file_i = 1:length(file_list)
    this_file_name = file_list(file_i).name;
@@ -55,6 +57,11 @@ for file_i = 1:length(file_list)
    filename_parts = strsplit(this_file_name, '.');
    filename = filename_parts{1};
    this_htk_frame = str2num(filename);
+   
+   % To ignore `used_triphones.mat`
+   if length(filename) > 3
+       continue;
+   end
    
    % We're going to skip these frames
    if this_htk_frame < first_usable_htk_frame
