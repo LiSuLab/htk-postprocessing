@@ -4,8 +4,8 @@ close all;
 %% Paths
 
 % Change these values
-input_dir = '/Users/cai/Desktop/cwd/models';
-output_dir = '/Users/cai/Desktop/cwd/models';
+input_dir = '/Users/cai/Desktop/cwd_likelihood/models';
+output_dir = '/Users/cai/Desktop/cwd_likelihood/models';
 
 chdir(output_dir)
 mkdir('Figures');
@@ -28,50 +28,51 @@ figure_size = [0, 0, 1200, 800];
 
 %% Phone labelling
 
-phone_label.aa = 1; % vowel	
-phone_label.ae = 1; % vowel	
-phone_label.ah = 1; % vowel	
-phone_label.ao = 1; % vowel	
-phone_label.aw = 1; % vowel	
-phone_label.ax = 1; % vowel	
-phone_label.ay = 1; % vowel	
-phone_label.ea = 1; % vowel	
-phone_label.eh = 1; % vowel	
-phone_label.er = 1; % vowel	
-phone_label.ey = 1; % vowel	
-phone_label.ia = 1; % vowel	
-phone_label.ih = 1; % vowel	
-phone_label.iy = 1; % vowel	
-phone_label.oh = 1; % vowel	
-phone_label.ow = 1; % vowel	
-phone_label.oy = 1; % vowel	
-phone_label.ua = 1; % vowel	
-phone_label.uh = 1; % vowel	
-phone_label.uw = 1; % vowel	
-phone_label.b  = 2; % consonant	bilabial	stop	voiced
-phone_label.p  = 2; % consonant	bilabial	stop	unvoiced
-phone_label.m  = 2; % consonant	bilabial	nasal
-phone_label.y  = 2; % consonant	paletal	approximant
-phone_label.jh = 2; % consonant	palato-alveolar	affricate	voiced
-phone_label.ch = 2; % consonant	palato-alveolar	affricate	unvoiced
-phone_label.zh = 2; % consonant	palato-alveolar sibilant fricative	voiced
-phone_label.sh = 2; % consonant	palato-alveolar	sibilant fricative	unvoiced
-phone_label.d  = 2; % consonant	alveolar	stop	voiced
-phone_label.t  = 2; % consonant	alveolar	stop	unvoiced
-phone_label.l  = 2; % consonant	alveolar	lateral approximant
-phone_label.n  = 2; % consonant	alveolar	nasal
-phone_label.r  = 2; % consonant	alveolar	trill
-phone_label.z  = 2; % consonant	alveolar	sibilant fricative	voiced
-phone_label.s  = 2; % consonant	alveolar	sibilant fricative	unvoiced
-phone_label.dh = 2; % consonant	interdental	fricative	voiced
-phone_label.th = 2; % consonant	interdental	fricative	unvoiced
-phone_label.v  = 2; % consonant	labiodental	fricative	voiced
-phone_label.f  = 2; % consonant	labiodental	fricative	unvoiced
-phone_label.g  = 2; % consonant	velar	stop	voiced
-phone_label.k  = 2; % consonant	velar	stop	unvoiced
-phone_label.ng = 2; % consonant	velar	nasal
-phone_label.hh = 2; % consonant	glottal	fricative
-phone_label.w  = 2; % consonant	labio-velar	approximant
+% sonorant
+phone_label.aa = 1;
+phone_label.ae = 1;
+phone_label.ah = 1;
+phone_label.ao = 1;
+phone_label.aw = 1;
+phone_label.ax = 1;
+phone_label.ay = 1;
+phone_label.b  = 2;
+phone_label.ch = 2;
+phone_label.d  = 2;
+phone_label.dh = 2;
+phone_label.ea = 1;
+phone_label.eh = 1;
+phone_label.er = 1;
+phone_label.ey = 1;
+phone_label.f  = 2;
+phone_label.g  = 2;
+phone_label.hh = 2;
+phone_label.ia = 1;
+phone_label.ih = 1;
+phone_label.iy = 1;
+phone_label.jh = 2;
+phone_label.k  = 2;
+phone_label.l  = 1;
+phone_label.m  = 2;
+phone_label.n  = 2;
+phone_label.ng = 2;
+phone_label.oh = 1;
+phone_label.ow = 1;
+phone_label.oy = 1;
+phone_label.p  = 2;
+phone_label.r  = 1;
+phone_label.s  = 2;
+phone_label.sh = 2;
+phone_label.t  = 2;
+phone_label.th = 2;
+phone_label.ua = 1;
+phone_label.uh = 1;
+phone_label.uw = 1;
+phone_label.v  = 2;
+phone_label.w  = 1;
+phone_label.y  = 1;
+phone_label.z  = 2;
+phone_label.zh = 2;
 
 category_colour_mapping(1) = {[1, 0, 0]};
 category_colour_mapping(2) = {[0, 1, 0]};
@@ -90,7 +91,11 @@ pats_mds_2D = NaN;
 
 n_frames = size(RDMs, 1);
 n_phones = size(RDMs, 2);
-for frame = 1:n_frames
+
+skip_frames = 4;
+animation_frame = 1;
+
+for frame = skip_frames+1:n_frames
     
     %% Second-order similarity matrix
     
@@ -140,12 +145,14 @@ for frame = 1:n_frames
     f = getframe(this_figure);
     
     % Store figure in stack
-    if frame == 1
+    if animation_frame == 1
         [all_models_image_stack, map] = rgb2ind(f.cdata, 256, 'nodither');
-        all_models_image_stack(1,1,1,n_frames) = 0;
+        all_models_image_stack(1,1,1,n_frames-skip_frames) = 0;
     else
-        all_models_image_stack(:,:,1,frame) = rgb2ind(f.cdata, map, 'nodither');
+        all_models_image_stack(:,:,1,animation_frame) = rgb2ind(f.cdata, map, 'nodither');
     end%if
+    
+    animation_frame = animation_frame + 1;
     
     close;
     
