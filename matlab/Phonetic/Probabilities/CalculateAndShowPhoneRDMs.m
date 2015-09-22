@@ -4,8 +4,8 @@ close all;
 %% Paths
 
 % Change these values
-input_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd_dnn', 'phones_data');
-output_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd_dnn', 'models');
+input_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd_likelihood', 'phones_data');
+output_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd_likelihood', 'models');
 toolbox_path = '/Volumes/Cai''s MBP HDD/Documents/Code/Neurolex/rsatoolbox-rsagroup';
 
 chdir(output_dir)
@@ -16,7 +16,7 @@ addpath(genpath(toolbox_path));
 %% Options
 
 % Whether or not to go through with displaying the RDMs.
-do_display = true;
+do_display = false;
 
 % Width of the sliding window in frames.
 sliding_window_width = 6;

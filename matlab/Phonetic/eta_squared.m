@@ -1,18 +1,24 @@
-% Expects phonetic_model_RDMs to be in the workspace.
+% Expects RDMs to be in the workspace.
 % Run CalculateAndShowPhoneRDMs.m first.
 
-[M, PHONES, FEATURES] = phonetic_feature_matrix();
+FEATURES = phonetic_feature_matrix();
 
-[n_features, n_phones] = size(M);
+feature_names = fields(FEATURES);
 
-[n_timepoints, n_models] = size(phonetic_model_RDMs);
+n_features = numel(feature_names);
+
+[n_timepoints, n_models] = size(RDMs);
+
+skip_frames = 4;
 
 % vectorise RDMs ahead of time
 for t = 1:n_timepoints
     for m = 1:n_models
-        phonetic_model_RDMs(t, m).RDM = squareform(phonetic_model_RDMs(t, m).RDM)';
+        phonetic_model_RDMs(t, m).RDM = squareform(RDMs(t, m).RDM)';
     end
 end
+
+n_timepoints = n_timepoints - skip_frames;
 
 etasquareds = nan(n_features, n_timepoints);
 
@@ -21,14 +27,15 @@ for t = 1:n_timepoints
     rsa.util.prints('Timepoint %d of %d...', t, n_timepoints);
 
     for feature_i = 1:n_features
+        
+        feature_name = feature_names{feature_i};
     
         rsa.util.prints('\tFeature %d of %d...', feature_i, n_features);
         
         % For each feature we'll consider the between-feat/nonfeat distances
         % and the within feat/nonfeat distances.
 
-        feature_profile = squeeze(M(feature_i, :));
-        nonfeature_profile = 1 - feature_profile;
+        feature_profile = FEATURES.(feature_name);
 
         within_distances = [];
         between_distances = [];
@@ -43,8 +50,8 @@ for t = 1:n_timepoints
                model_j = models_with_feature(model_j_i);
                % distance between model i and model j
                d_ij = 1 - corr( ...
-                   phonetic_model_RDMs(t, model_i).RDM, ...
-                   phonetic_model_RDMs(t, model_j).RDM, ...
+                   phonetic_model_RDMs(t+skip_frames, model_i).RDM, ...
+                   phonetic_model_RDMs(t+skip_frames, model_j).RDM, ...
                    'type', 'Spearman');
                within_distances = [within_distances; d_ij];
            end
@@ -57,8 +64,8 @@ for t = 1:n_timepoints
                model_j = models_without_feature(model_j_i);
                % distance between model i and model j
                d_ij = 1 - corr( ...
-                   phonetic_model_RDMs(t, model_i).RDM, ...
-                   phonetic_model_RDMs(t, model_j).RDM, ...
+                   phonetic_model_RDMs(t+skip_frames, model_i).RDM, ...
+                   phonetic_model_RDMs(t+skip_frames, model_j).RDM, ...
                    'type', 'Spearman');
                within_distances = [within_distances; d_ij];
            end
@@ -71,8 +78,8 @@ for t = 1:n_timepoints
                model_j = models_without_feature(model_j_i);
                % distance between model i and model j
                d_ij = 1 - corr( ...
-                   phonetic_model_RDMs(t, model_i).RDM, ...
-                   phonetic_model_RDMs(t, model_j).RDM, ...
+                   phonetic_model_RDMs(t+skip_frames, model_i).RDM, ...
+                   phonetic_model_RDMs(t+skip_frames, model_j).RDM, ...
                    'type', 'Spearman');
                between_distances = [between_distances; d_ij];
            end

@@ -4,7 +4,6 @@ Extract some cepstral coefficients from HTK's output file.
 """
 
 import re
-
 import numpy
 import scipy
 import scipy.io
@@ -231,13 +230,14 @@ def apply_triphone_probability_model(triphone_probability_lists, word_list, PHON
     return likelihood_data
 
 
-def which_triphones_are_used(triphone_probability_lists, word_list, frame_cap, silent):
+def which_triphones_are_used(triphone_probability_lists, word_list, frame_cap, output_dir, silent):
     """
 We want probability feature vectors.  Therefore, we need to ensure that we are
 looking in a common set of triphones for each pair of words for each frame.
 
 This function will return a frame_id-keyed dictionary lists of triphones.
 
+    :param output_dir:
     :param triphone_probability_lists:
     :param word_list:
     :param frame_cap:
@@ -248,8 +248,9 @@ This function will return a frame_id-keyed dictionary lists of triphones.
     # I guess lazy instantiation wasn't so smart :[
     local_word_list = list(word_list)
 
-    # TODO BUG: this isn't working yet!!
-    used_triphones_by_frames = dict()
+    # We will record used triphones per frame in each word.
+    # It will be a n_frames x n_words array of counts.
+    triphone_counts = numpy.zeros((len(local_word_list), int(frame_cap)))
 
     used_triphones_overall = set()
 
@@ -264,29 +265,47 @@ This function will return a frame_id-keyed dictionary lists of triphones.
         if not silent:
             prints("Looking for triphones used in frame {0}...".format(frame_id))
 
-        triphone_list = None
+        triphone_list_this_word = None
 
-        # Now we go through each word in turn
+        # Now we go through each word in turn.
+
+        # We count the words for purposes of indexing.
+        word_i = 0
+
         for word in local_word_list:
+            word_i += 1
+
             triphones = list(triphone_probability_lists[word][frame_id].keys())
             triphones = filter(
                 lambda triphone: triphone != '' and triphone != 'sil' and triphone != 'sp',
                 triphones)
 
             # For the first word, we will just take the list of triphones as is
-            if triphone_list is None:
-                triphone_list = list(triphones)
+            if triphone_list_this_word is None:
+                triphone_list_this_word = list(triphones)
             # For the rest of the words we will intersect the list of triphones
             # so that by the end of it we only have triphones common to ALL
             # words.
             else:
-                triphone_list = list(set(triphone_list).intersection(set(triphones)))
+                triphone_list_this_word = list(set(triphone_list_this_word).intersection(set(triphones)))
 
-            used_triphones_overall = list(set(used_triphones_overall).union(set(triphone_list)))
+            used_triphones_overall = list(set(used_triphones_overall).union(set(triphone_list_this_word)))
 
-        used_triphones_by_frames[frame_id] = triphone_list
+            # -1 to conver 1-indexed words and frames to 0-indexed array.
+            triphone_counts[word_i-1, frame-1] = len(triphone_list_this_word)
 
-    return used_triphones_by_frames, used_triphones_overall
+        # Need to wrap the array in a dictionary in order to save it.
+        scipy.io.savemat(
+            os.path.join(
+                output_dir,
+                "used_triphones"),
+            # savemat requires a dictionary here
+            {
+                "triphone_counts": triphone_counts
+            },
+            appendmat=True)
+
+    return triphone_counts, used_triphones_overall
 
 
 def save_features(likelihood_data, output_dir, frame_cap, silent=False):
@@ -454,15 +473,7 @@ def main(argv):
 
     show_average_triphone_counts(triphone_probability_lists, word_list, frame_cap)
 
-    used_triphones_by_frames, used_triphones_overall = which_triphones_are_used(triphone_probability_lists, word_list, frame_cap, silent)
-
-    scipy.io.savemat(
-        os.path.join(
-            output_dir,
-            "used_triphones"),
-        # savemat requires a dictionary here
-        used_triphones_by_frames,
-        appendmat=True)
+    triphone_count_by_frame, used_triphones_overall = which_triphones_are_used(triphone_probability_lists, word_list, frame_cap, output_dir, silent)
 
     likelihood_data = apply_triphone_probability_model(triphone_probability_lists, word_list, PHONE_LIST_DNN,  used_triphones_overall, frame_cap, silent)
 

@@ -1,11 +1,19 @@
 clear;
 close all;
 
-%% Paths
+%% Change these values
 
-% Change these values
 input_dir = '/Users/cai/Desktop/cwd_likelihood/models';
 output_dir = '/Users/cai/Desktop/cwd_likelihood/models';
+
+model_file_name = 'triphone-likelihood-RDMs.mat';
+
+analysis_name = 'triphone-likelihood';
+
+skip_frames = 4;
+
+
+%% Prepare directories
 
 chdir(output_dir)
 mkdir('Figures');
@@ -16,7 +24,7 @@ figures_dir = fullfile(output_dir, 'Figures');
 userOptions = struct();
 userOptions.saveFiguresJpg = false;
 userOptions.displayFigures = false;
-userOptions.analysisName = 'triphone-likelihood';
+userOptions.analysisName = analysis_name;
 userOptions.rootPath = output_dir;
 userOptions.RDMCorrelationType = 'Spearman';
 
@@ -81,7 +89,7 @@ category_colour_mapping(2) = {[0, 1, 0]};
 %% Load RDMs
 
 chdir(input_dir);
-RDMs = rsa.util.directLoad('triphone-likelihood-RDMs.mat');
+RDMs = rsa.util.directLoad(model_file_name);
 
 phone_free_RDMs = rmfield(RDMs, 'phone');
 
@@ -92,9 +100,7 @@ pats_mds_2D = NaN;
 n_frames = size(RDMs, 1);
 n_phones = size(RDMs, 2);
 
-skip_frames = 4;
 animation_frame = 1;
-
 for frame = skip_frames+1:n_frames
     
     %% Second-order similarity matrix
@@ -131,6 +137,7 @@ for frame = skip_frames+1:n_frames
     MDS_options_extra.rubberbandGraphPlot = false;
     MDS_options_extra.figureNumber = 1;
     MDS_options_extra.dMatrix = RDM_d_matrix_this_frame;
+    MDS_options_extra.fontSize = 16;
     
     % Do the MDS
     rsa.MDSRDMs({phone_free_RDMs(frame, :)}, MDS_options, MDS_options_extra);
