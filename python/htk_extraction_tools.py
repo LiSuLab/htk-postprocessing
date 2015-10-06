@@ -34,7 +34,7 @@ def deal_triphones_by_phone(list_of_extant_triphones):
     return phone_dictionary
 
 
-def get_word_list(wordlist_filename, silent):
+def get_word_list(wordlist_filename, silent=False):
     """
     Returns a list of all the (newline-separated) words in the wordlist file.
     :param silent:

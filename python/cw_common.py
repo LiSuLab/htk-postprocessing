@@ -132,7 +132,7 @@ def get_log_filename(filepath):
     :return:
     """
     (log_dirname, log_filename) = os.path.split(filepath)
-    log_filename = "{date}-{filename}.log".format(date=datetime.now().strftime("%Y-%m-%d"), filename=log_filename)
+    log_filename = "{date}-{filename}.log".format(date=datetime.now().strftime("%Y-%m-%dT%H-%M-%S"), filename=log_filename)
     log_filename = os.path.join(log_dirname, log_filename)
     return log_filename
 
