@@ -167,6 +167,23 @@ class ActivationLines(Enum):
 	Nodes2026    = 3
 
 
+def save_activations(activations, output_dir_path):
+	"""
+	Saves mat files for the activations
+	:param activations:
+	:param output_dir_path:
+	"""
+	for word in activations.keys():
+		# Convert data into numpy array
+		activations[word] = numpy.array(activations[word])
+
+	# Save
+	scipy.io.savemat(
+		os.path.join(output_dir_path, "bn26_activations"),
+		activations,
+		appendmat = True)
+
+
 def main():
 	"""
 	Do dat analysis.
@@ -188,7 +205,7 @@ def main():
 
 	activations = get_activation_lists(input_dir_path, word_list, frame_cap)
 
-	pass
+	save_activations(activations, output_dir_path)
 
 
 
