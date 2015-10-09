@@ -46,5 +46,5 @@ for frame_i = 1:n_frames
     
 end
 
-imwrite(image_stack, map, 'time.gif', 'DelayTime', 0.5, 'LoopCount', inf);
+imwrite(image_stack, map, 'time.gif', 'DelayTime', 0.2, 'LoopCount', inf);
 
