@@ -1,4 +1,7 @@
-bn26 = load('bn26_activations.mat');
+load_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
+save_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'figures_activations');
+
+bn26 = load(fullfile(load_dir, 'bn26_activations.mat'));
 bn26 = orderfields(bn26);
 
 words = fieldnames(bn26);
@@ -28,7 +31,7 @@ for node_i = 1:n_nodes
     this_figure = gcf;
     this_axis = gca;
     
-    figure_size = [10, 10, 900, 900];
+    figure_size = [10, 10, 1400, 900];
     set(this_figure, 'Position', figure_size);
 
     imagesc(activation_data, clims);
@@ -37,10 +40,13 @@ for node_i = 1:n_nodes
     
     node_name = sprintf('node%02d', node_i);
     title(node_name);
+    
+    this_frame = getframe(this_figure);
 
     % save the figure
-    file_name = node_name;
-    print(this_figure, file_name, '-dpng');
+    file_path = fullfile(save_dir, node_name);
+    
+    imwrite(this_frame.cdata, [file_path, '.png'], 'png');
 
     close(this_figure);
     
