@@ -1,4 +1,7 @@
-bn26 = load('bn26_activations.mat');
+load_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
+save_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'figures_activations');
+
+bn26 = load(fullfile(load_dir, 'bn26_activations.mat'));
 bn26 = orderfields(bn26);
 
 words = fieldnames(bn26);
@@ -16,21 +19,28 @@ end
 clims = centre_clims_on_zero(clims);
 
 for word_i = 1:n_words
-   word = words{word_i};
-   
-   figure;
-   this_figure = gcf;
-   
-   imagesc(bn26.(word)', clims);
-   colorbar;
-   colormap(bipolar);
-   
-   title(word);
-   
-   % save the figure
-   file_name = sprintf('word_%s', word);
-   print(this_figure, file_name, '-dpng');
-   
-   close(this_figure);
+    word = words{word_i};
+
+    figure;
+    this_figure = gcf;
+    this_axis = gca;
+
+    figure_size = [10, 10, 1400, 900];
+    set(this_figure, 'Position', figure_size);
+
+    imagesc(bn26.(word)', clims);
+    colorbar;
+    colormap(bipolar);
+
+    title(word);
+
+    this_frame = getframe(this_figure);
+
+    % save the figure
+    file_path = fullfile(save_dir, sprintf('word_%s', word));
+
+    imwrite(this_frame.cdata, [file_path, '.png'], 'png');
+
+    close(this_figure);
    
 end
