@@ -8,7 +8,7 @@ words = fieldnames(bn26);
 n_words = numel(words);
 [n_frames, n_nodes] = size(bn26.(words{1}));
 
-% Get clims
+% Get some info
 clims = [-1, 1];
 for word_i = 1:n_words
    word = words{word_i};

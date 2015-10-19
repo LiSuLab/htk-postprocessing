@@ -101,7 +101,7 @@ def get_activation_lists(input_dir_path, word_list, frame_cap):
 						current_frame_index = int(frame_data_1_match.group("frame_id"))
 
 						# We don't want to bother looking past the frame cap, so if we get to a frame which is past it, we can break out of this line loop.
-						if current_frame_index > frame_cap:
+						if frame_cap > 0 and current_frame_index > frame_cap:
 							break
 
 						# Extract the list of activations
@@ -201,12 +201,11 @@ def main():
 	word_list = list(get_word_list(word_list_file_path))
 
 	# The number of frames to use in the analysis
-	frame_cap = get_min_frame_index(input_dir_path, word_list)
+	frame_cap = 0#get_min_frame_index(input_dir_path, word_list)
 
 	activations = get_activation_lists(input_dir_path, word_list, frame_cap)
 
 	save_activations(activations, output_dir_path)
-
 
 
 
