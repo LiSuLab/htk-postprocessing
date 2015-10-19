@@ -17,51 +17,73 @@ import scipy.io
 from htk_extraction_tools import *
 
 
-def get_activation_lists(input_dir_path, word_list, frame_cap):
-	"""
-
-	:param input_dir_path:
-	:param word_list:
-	:param frame_cap:
-	:return activations: a word-keyed dictionary of frame-indexed lists of node-indexed lists of activations
-	"""
+def get_segmentation(input_dir_path, word_list, frame_cap):
 
 	# Regular expression for frame and list of node activations
-	frame_data_1_re = re.compile((
-			# The frame number
-			r"(?P<frame_id>[0-9]+):\s+"
-			# The list of activation values
-			r"(?P<activation_list_1>(?:-?[0-9]+\.?[0-9]+\s*)+)$"))
+	segment_re = re.compile((
+		# The onset of the segment
+		r"^(?P<onset>[0-9]+)\s+"
+		# The offset of the segment
+		r"(?P<offset>[0-9]+)\s+"
+		# The tri/phone
+		r"(?P<triphone>[a-z\+\-]+)\s+"
+		# The rest
+		r".*$"))
 
-	# a word-keyed dictionary of frame-indexed lists of node-indexed lists of activations.
-	activations = {}
+	# a word-keyed dictionary of sequence-indexed lists of (onset, offset, triphone)-tuples.
+	boundaries = {}
 
 	# Work on each word separately and in turn
 	for word in word_list:
 
-		
+		prints("Segmenting word \"{0}\"...", word)
+
+		word_boundaries = []
+
+		word_file_path = os.path.join(input_dir_path, "{0}.rec".format(word))
+		with open(word_file_path, 'r', encoding='utf-8') as word_file:
+			for line in word_file:
+				line_match = segment_re.match(line)
+				if line_match:
+					onset    = int(line_match.group("onset"))
+					offset   = int(line_match.group("offset"))
+					triphone = line_match.group("triphone")
+
+					if triphone != 'sp':
+						word_boundaries.append((onset, offset, triphone))
 
 		# Now save this word's activations list into a dictionary keyed on that word
-		activations[word] = word_activations.copy()
+		boundaries[word] = word_boundaries.copy()
 
-	return activations
+	return boundaries
 
 
-def save_activations(activations, output_dir_path):
+def save_boundaries(boundaries, output_dir_path):
 	"""
 	Saves mat files for the activations
-	:param activations:
+	:param boundaries:
 	:param output_dir_path:
 	"""
-	for word in activations.keys():
+
+	for word in boundaries.keys():
 		# Convert data into numpy array
-		activations[word] = numpy.array(activations[word])
+		n_segments = len(boundaries[word])
+		numpyified = numpy.zeros((n_segments,), dtype=[
+			('onset', int),
+			('offset', int),
+			('triphone', '|S10')
+		])
+		for i in range(n_segments):
+			numpyified[i] = (boundaries[word][i])
+
+		boundaries[word] = numpyified
 
 	# Save
 	scipy.io.savemat(
-		os.path.join(output_dir_path, "bn26_activations"),
-		activations,
-		appendmat = True)
+		os.path.join(output_dir_path, "triphone_boundaries"),
+		boundaries,
+		appendmat = True,
+		long_field_names = True)
 
 
 def main():
@@ -80,9 +102,9 @@ def main():
 	# The number of frames to use in the analysis
 	frame_cap = 0#get_min_frame_index(input_dir_path, word_list)
 
-	activations = get_activation_lists(input_dir_path, word_list, frame_cap)
+	activations = get_segmentation(input_dir_path, word_list, frame_cap)
 
-	save_activations(activations, output_dir_path)
+	save_boundaries(activations, output_dir_path)
 
 
 
