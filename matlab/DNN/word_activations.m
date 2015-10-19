@@ -27,8 +27,13 @@ for word_i = 1:n_words
 
     figure_size = [10, 10, 1400, 900];
     set(this_figure, 'Position', figure_size);
-
-    imagesc(bn26.(word)', clims);
+    
+    pic = sanePColor(bn26.(word)');
+    
+    set(pic, 'EdgeColor', 'none');
+    set(this_axis, 'color', 'none');
+    set(this_axis, 'box', 'off');
+    caxis(clims);
     colorbar;
     colormap(bipolar);
 
