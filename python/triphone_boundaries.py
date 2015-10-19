@@ -17,7 +17,7 @@ import scipy.io
 from htk_extraction_tools import *
 
 
-def get_segmentation(input_dir_path, word_list, frame_cap):
+def get_segmentation(input_dir_path, word_list, frame_cap, convert_to_phones=True):
 
 	# Regular expression for frame and list of node activations
 	segment_re = re.compile((
@@ -26,11 +26,11 @@ def get_segmentation(input_dir_path, word_list, frame_cap):
 		# The offset of the segment
 		r"(?P<offset>[0-9]+)\s+"
 		# The tri/phone
-		r"(?P<triphone>[a-z\+\-]+)\s+"
+		r"(?P<segment_label>[a-z\+\-]+)\s+"
 		# The rest
 		r".*$"))
 
-	# a word-keyed dictionary of sequence-indexed lists of (onset, offset, triphone)-tuples.
+	# a word-keyed dictionary of sequence-indexed lists of (onset, offset, segment_label)-tuples.
 	boundaries = {}
 
 	# Work on each word separately and in turn
@@ -47,10 +47,13 @@ def get_segmentation(input_dir_path, word_list, frame_cap):
 				if line_match:
 					onset    = int(line_match.group("onset"))
 					offset   = int(line_match.group("offset"))
-					triphone = line_match.group("triphone")
+					segment_label = line_match.group("segment_label")
 
-					if triphone != 'sp':
-						word_boundaries.append((onset, offset, triphone))
+					if segment_label == 'sp':
+						continue
+					if convert_to_phones and segment_label != 'sil':
+						segment_label = triphone_to_phone_triplet(segment_label)[1]
+					word_boundaries.append((onset, offset, segment_label))
 
 		# Now save this word's activations list into a dictionary keyed on that word
 		boundaries[word] = word_boundaries.copy()
@@ -71,7 +74,7 @@ def save_boundaries(boundaries, output_dir_path):
 		numpyified = numpy.zeros((n_segments,), dtype=[
 			('onset', int),
 			('offset', int),
-			('triphone', '|S10')
+			('label', '|S10')
 		])
 		for i in range(n_segments):
 			numpyified[i] = (boundaries[word][i])
@@ -102,9 +105,9 @@ def main():
 	# The number of frames to use in the analysis
 	frame_cap = 0#get_min_frame_index(input_dir_path, word_list)
 
-	activations = get_segmentation(input_dir_path, word_list, frame_cap)
+	segmentation = get_segmentation(input_dir_path, word_list, frame_cap)
 
-	save_boundaries(activations, output_dir_path)
+	save_boundaries(segmentation, output_dir_path)
 
 
 
