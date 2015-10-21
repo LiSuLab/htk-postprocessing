@@ -50,7 +50,7 @@ function fraction = get_interval_overlap(foreground, background)
     % Find out which case we're in.
     if foreground(1) <= background(1)
         % `foreground` starts to the left of `background`
-        if foreground(2) <= background(2)
+        if foreground(2) <= background(1)
             % `foreground` does not intersect with `background` by more
             % than a point.
             overlap = 0;
