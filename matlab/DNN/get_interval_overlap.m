@@ -1,14 +1,50 @@
+% get_interval_overlap(foreground, background)
+%
 % Imagine an interval in the foreground moving over a stationary background
 % interval. This function calculates the degree to which the foreground
 % interval overlaps the background window, as a fraction of the width of
 % the foreground window.
 %
-function fraction = get_interval_overlap(background, foreground)
+% For example:
+%
+% for i=1:10
+%   disp(get_interval_overlap([i, i+4], [5, 9]))
+% end
+%     0
+%     0
+%     0.3333
+%     0.6667
+%     1
+%     1
+%     0.6667
+%     0.3333
+%     0
+%     0
+%
+% Corresponds to:
+%
+% 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16
+%                |     bg    |
+%                .           .
+%  > |  fg01  | (0)          .
+%       |  fg02  | (0)       .
+%          |  fg03  | (0.3333)
+%             |  fg04  | (0.6667)
+%                |  fg05  | (1)
+%                .  |  fg06  | (1)
+%                .     |  fg07  | 0.6667)
+%                .        |  fg08  | (0.333)
+%                .           |  fg09  | (0)
+%                .           .  |  fg10  | (0)
+%
+function fraction = get_interval_overlap(foreground, background)
 
     % Input validations
     assert(is_interval(foreground));
     assert(is_interval(background));
 
+    % To track errors.
+    % `overlap` should never end up as nan.
     overlap = NaN;
 
     % Find out which case we're in.
