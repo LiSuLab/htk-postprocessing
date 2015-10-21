@@ -45,25 +45,37 @@ for word_i = 1:n_words
     title(word, 'FontSize', 40);
     
     %% Phone boundary markers
+    
+    % We want to add the boundary markers at the frame index whose sliding
+    % window is centred over the boundary.
+    %
+    % Recall that the frame indices mark the *start* of the sliding window,
+    % so that frame 1 covers the period [0, 25]ms.
+    %
+    % Were the 25ms frames moving continuously, the frame centred on a
+    % boundary would begin 12.5ms before the boundary, so we move all
+    % boundaries to the left by 12.5ms (1.25 of a 10ms timestep).
+	%
+	% We also need to convert from ms (0-indexed) to frames (1-indexed)
+    
     segmentation = segmentations.(word);
     for seg_i = 1:numel(segmentation)
-        % Get segmentation data                             to ms    to frames (timestep)
-        onset    = ((double(segmentation(seg_i).onset)    / 10000) / 10) ;
-        offset   = ((double(segmentation(seg_i).offset)   / 10000) / 10) ;
-        phone =             segmentation(seg_i).label;
+        % Get segmentation data                           to ms    offset  to framestep (timestep)
+        %                                                /        /       /     ,1-index correction
+        onset  = (((double(segmentation(seg_i).onset)  / 10000) - 12.5) / 10) + 1;
+        offset = (((double(segmentation(seg_i).offset) / 10000) - 12.5) / 10) + 1;
+        phone  = segmentation(seg_i).label;
         
         middle = (onset + offset) / 2;
         
         % onset line
-        line([onset  onset],  [0 26.5], 'LineWidth', 3, 'Color', [0, 0, 0], 'LineStyle','--');
+        line([onset  onset],  [0 26.5], 'LineWidth', 3, 'Color', [1, 1, 1], 'LineStyle','--');
         % offset line
         %line([offset offset], [0 26.5], 'LineWidth', 3, 'Color', [0, 0, 0], 'LineStyle','--');
         % text label
-        t = text(middle, 13, phone);
-        set(t, 'FontSize', 20);
+        t = text(middle, 13, phone, 'Color', 'white', 'FontSize', 20);
         set(t, 'HorizontalAlignment', 'Center');
         set(t, 'VerticalAlignment', 'middle');
-        %set(t, 'rotation', 90);
     end%for
 
     %% save the figure
