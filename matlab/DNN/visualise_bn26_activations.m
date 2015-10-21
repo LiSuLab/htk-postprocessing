@@ -1,3 +1,6 @@
+
+% Produces an animation over frames for bn activations for each word.
+
 bn26 = load('bn26_activations.mat');
 bn26 = orderfields(bn26);
 

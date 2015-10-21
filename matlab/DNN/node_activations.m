@@ -1,3 +1,5 @@
+% Produces word-by-frame activations for each node
+
 load_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
 save_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'figures_activations');
 

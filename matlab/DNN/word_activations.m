@@ -1,3 +1,7 @@
+% Produces node-by-frame activation plots for each word
+%
+% Adds phone boundary markers.
+
 load_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
 save_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'figures_activations');
 
@@ -24,7 +28,8 @@ clims = centre_clims_on_zero(clims);
 for word_i = 1:n_words
     word = words{word_i};
     
-    % Create the activation map
+    %% Create the activation map
+    
     figure;
     this_figure = gcf;
     this_axis = gca;
@@ -39,7 +44,7 @@ for word_i = 1:n_words
 
     title(word, 'FontSize', 40);
     
-    % Segmentations
+    %% Phone boundary markers
     segmentation = segmentations.(word);
     for seg_i = 1:numel(segmentation)
         % Get segmentation data                             to ms    to frames (timestep)
@@ -61,7 +66,8 @@ for word_i = 1:n_words
         %set(t, 'rotation', 90);
     end%for
 
-    % save the figure
+    %% save the figure
+    
     this_frame = getframe(this_figure);
     file_path = fullfile(save_dir, sprintf('word_%s', word));
     imwrite(this_frame.cdata, [file_path, '.png'], 'png');

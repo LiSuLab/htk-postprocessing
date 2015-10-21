@@ -10,6 +10,7 @@
 % for i=1:10
 %   disp(get_interval_overlap([i, i+4], [5, 9]))
 % end
+%
 %     0
 %     0
 %     0.3333
@@ -36,7 +37,7 @@
 %                .        |  fg08  | (0.333)
 %                .           |  fg09  | (0)
 %                .           .  |  fg10  | (0)
-%
+%                .           .
 function fraction = get_interval_overlap(foreground, background)
 
     % Input validations
@@ -73,7 +74,7 @@ function fraction = get_interval_overlap(foreground, background)
         else
             % `foreground` ends to the right of `background`
             if foreground(1) >= background(2)
-                % `foreground does not intersect with `background` by more
+                % `foreground` does not intersect with `background` by more
                 % than a point.
                 overlap = 0;
             else
@@ -83,6 +84,9 @@ function fraction = get_interval_overlap(foreground, background)
             end
         end
     end
+    
+    % Checking that all cases were covered and that a value was assigned.
+    assert(~isnan(overlap));
     
     % Avoid dividing by zero
     width = foreground(2) - foreground(1);
