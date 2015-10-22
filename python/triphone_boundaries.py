@@ -74,8 +74,8 @@ def save_boundaries(boundaries, output_dir_path):
 		numpyified = numpy.zeros((n_segments,), dtype=[
 			('onset', int),
 			('offset', int),
-			('label', '|S10')
-		])
+			('label', '|S10')])
+
 		for i in range(n_segments):
 			numpyified[i] = (boundaries[word][i])
 
@@ -95,7 +95,7 @@ def main():
 	"""
 
 	# Define some paths
-	input_dir_path      = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'triphone_boundaries')
+	input_dir_path      = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'triphone_boundaries_3_4')
 	output_dir_path     = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'py_out')
 	word_list_file_path = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'Stimuli-Lexpro-MEG-Single-col.txt')
 
