@@ -1,7 +1,7 @@
 % Produces word-by-frame activations for each node
 
 load_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
-save_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'figures_activations');
+save_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'figures_activations', 'nodes');
 
 bn26 = load(fullfile(load_dir, 'bn26_activations.mat'));
 bn26 = orderfields(bn26);

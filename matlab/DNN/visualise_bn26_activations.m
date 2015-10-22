@@ -1,13 +1,19 @@
 
 % Produces an animation over frames for bn activations for each word.
 
-bn26 = load('bn26_activations.mat');
+load_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
+save_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'figures_activations');
+
+bn26 = load(fullfile(load_dir, 'bn26_activations.mat'));
 bn26 = orderfields(bn26);
 
 words = fieldnames(bn26);
 n_words = numel(words);
 
 [n_frames, n_nodes] = size(bn26.(words{1}));
+
+% frame cap
+n_frames = 27;
 
 % Get clims
 clims = [-1, 1];
@@ -32,6 +38,9 @@ for frame_i = 1:n_frames
     figure;
     this_figure = gcf;
     
+    figure_size = [10, 10, 1400, 900];
+    set(this_figure, 'Position', figure_size);
+    
     imagesc(activation_data, clims);
     colorbar;
     colormap(bipolar);
@@ -49,5 +58,5 @@ for frame_i = 1:n_frames
     
 end
 
-imwrite(image_stack, map, 'time.gif', 'DelayTime', 0.2, 'LoopCount', inf);
+imwrite(image_stack, map, fullfile(save_dir, 'time.gif'), 'DelayTime', 0.2, 'LoopCount', inf);
 
