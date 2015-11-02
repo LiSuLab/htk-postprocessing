@@ -20,15 +20,13 @@ function naive_reconstruction()
     end
     
     %% Finding longest audio length
-%     audio_length_max = 0;
-%     for word_i = 1:n_words
-%        word = words{word_i};
-%        stimulus_path = fullfile(stimuli_dir, [word, '.wav']);
-%        % Load in the data
-%        [wav, sample_freq] = audioread(stimulus_path);
-%        audio_length_max = max(audio_length_max, numel(wav));
-%     end
-    audio_length_max = 19430;
+    audio_length_max = 0;
+    for word_i = 1:n_words
+       word = words{word_i};
+       stimulus_path = fullfile(stimuli_dir, [word, '.wav']);
+       [wav, sample_freq] = audioread(stimulus_path);
+       audio_length_max = max(audio_length_max, numel(wav));
+    end
     
     %% Load in audio data
     audio_data = nan(n_words, audio_length_max);
@@ -56,31 +54,46 @@ function naive_reconstruction()
     for recon_word_i = 1:n_words
         recon_word = words{recon_word_i};
         
+        disp(['Reconstructing ', recon_word, ' (', num2str(recon_word_i), ')...']);
+        
+        % BN activations for each frame of the word to be reconstructed
         recon_word_bn_data = bn26.(recon_word);
         n_recon_frames = size(recon_word_bn_data, 1);
         
-        disp(['Reconstructing ', recon_word, ' (', num2str(recon_word_i), ')...']);
-        
+        % collect the data from the audio reconstruction
         recon_audio = nan(audio_lengths(word_i), 1);
         
-        % ...and each frame of that word
-        for frame_i = 1:n_recon_frames
+        % ...and each frame of that word:
+        for recon_frame_i = 1:n_recon_frames
+            disp(['    Frame ', num2str(recon_frame_i), ':', num2str(n_recon_frames)]);
             
-            disp(['    Frame ', num2str(frame_i), ':', num2str(n_recon_frames)]);
+            % Take the BN activation pattern for this frame
+            recon_bn_pattern = recon_word_bn_data(recon_frame_i, :)';
             
-            % we take the bn-pattern for this frame
-            recon_bn_pattern = recon_word_bn_data(frame_i, :)';
+            % and correlate it with the pattern for each frame of each
+            % other word.
             
-            % and correlate it with each frame pattern of each other word.
+            % best correlation to this frame so far
             best_corr = -inf;
+            % word_i for best correlation so far
             best_corr_word_i = nan;
+            % frame_i for best correlation so far
             best_corr_frame_i = nan;
+            
+            % For each other word
             for other_word_i = exrange(1, n_words, recon_word_i)
                 other_word = words{other_word_i};
+                
+                % Get its data
                 other_word_bn_data = bn26.(other_word);
                 
+                % Correlation every frame with the recon's current frame
                 corrs = corr(other_word_bn_data', recon_bn_pattern);
+                
+                % find the best frame by correlation
                 [max_corr, max_corr_i] = max(corrs);
+                
+                % If it's the best one so far, remember it.
                 if max_corr > best_corr
                    best_corr = max_corr;
                    best_corr_word_i = other_word_i;
@@ -91,12 +104,20 @@ function naive_reconstruction()
             % We now have the location of the best bn-layer response match.
             % We use this to extract the segment of audio corresponding to
             % this frame.
-            extract_time_window = frame2time(best_corr_frame_i, sample_freq);
-            recon_time_window = frame2time(frame_i, sample_freq);
             
+            % time window to exactract from
+            extract_time_window = frame2time(best_corr_frame_i, sample_freq);
+            
+            % time window to insert into
+            recon_time_window = frame2time(recon_frame_i, sample_freq);
+            
+            % extract the audio
             extracted_audio_fragment = audio_data(best_corr_word_i, win2range(extract_time_window));
             
+            % insert the audio
             recon_audio(win2range(recon_time_window)) = extracted_audio_fragment(:);
+            
+            % continue with the next frame to reconstruct
         end
         
         % Save the audio
