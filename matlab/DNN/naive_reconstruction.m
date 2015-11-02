@@ -32,11 +32,13 @@ function naive_reconstruction()
     
     %% Load in audio data
     audio_data = nan(n_words, audio_length_max);
+    audio_lengths = nan(n_words, 1);
     for word_i = 1:n_words
        word = words{word_i};
        stimulus_path = fullfile(stimuli_dir, [word, '.wav']);
        % Load in the data
        [wav, sample_freq] = audioread(stimulus_path);
+       audio_lengths(word_i) = numel(wav);
        audio_data(word_i, 1:numel(wav)) = wav;
     end
 
@@ -58,6 +60,8 @@ function naive_reconstruction()
         n_recon_frames = size(recon_word_bn_data, 1);
         
         disp(['Reconstructing ', recon_word, ' (', num2str(recon_word_i), ')...']);
+        
+        recon_audio = nan(audio_lengths(word_i), 1);
         
         % ...and each frame of that word
         for frame_i = 1:n_recon_frames
@@ -87,8 +91,16 @@ function naive_reconstruction()
             % We now have the location of the best bn-layer response match.
             % We use this to extract the segment of audio corresponding to
             % this frame.
-            time_window = frame2time(best_corr_frame_i);
+            extract_time_window = frame2time(best_corr_frame_i, sample_freq);
+            recon_time_window = frame2time(frame_i, sample_freq);
+            
+            extracted_audio_fragment = audio_data(best_corr_word_i, win2range(extract_time_window));
+            
+            recon_audio(win2range(recon_time_window)) = extracted_audio_fragment(:);
         end
+        
+        % Save the audio
+        audiowrite(fullfile(save_dir, [recon_word, '.wav']), recon_audio, sample_freq);
     end
         
 
@@ -111,6 +123,20 @@ function l = exrange(start, finish, omit)
 end%function
 
 % Returns the start and end time code from a frame number
-function time_window = frame2time(frame_i)
+function time_window = frame2time(frame_i, sample_freq)
+    FRAME_WIDTH_MS = 25;
+    FRAME_STEP_MS = 10;
+    
+    start_time = FRAME_STEP_MS * (frame_i - 1);
+    end_time = start_time + FRAME_WIDTH_MS;
+    
+    time_window = [ ...
+        floor((sample_freq/1000) * start_time) + 1, ...
+        floor((sample_freq/1000) * end_time), ...
+    ];
     
 end%function
+
+function r = win2range(w)
+    r = w(1):w(2);
+end
