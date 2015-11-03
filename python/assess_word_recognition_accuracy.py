@@ -59,7 +59,7 @@ def main():
 	"""
 
 	# Define some paths
-	input_dir_path      = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'triphone_boundaries_3_4')
+	input_dir_path      = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'triphone_boundaries_3_5')
 	output_dir_path     = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'py_out')
 	word_list_file_path = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'Stimuli-Lexpro-MEG-Single-col.txt')
 
