@@ -3,7 +3,6 @@
 function [phone_models] = phone_activations()
     
     load_dir  = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
-    save_dir  = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'figures_activations', 'words');
 
     segmentations = load(fullfile(load_dir, 'triphone_boundaries.mat'));
     segmentations = orderfields(segmentations);
