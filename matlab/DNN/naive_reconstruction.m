@@ -121,7 +121,7 @@ function naive_reconstruction()
         end
         
         % Save the audio
-        audiowrite(fullfile(save_dir, [recon_word, '.wav']), recon_audio, sample_freq);
+        audiowrite(fullfile(save_dir, [recon_word, '_reconstruction.wav']), recon_audio, sample_freq);
     end
         
 
