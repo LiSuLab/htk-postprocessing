@@ -25,19 +25,21 @@ end
 
 rsa.util.prints('Loading bn26 data...');
 
-RDM_stack = nan(n_words, n_words, n_frames);
+square_RDM_stack = nan(n_words, n_words, n_frames);
+output_RDMs = repmat(struct('RDM', nan), n_frames, 1);
 
 for frame_i = 1:n_frames
     
     rsa.util.prints('Creating RDM for frame %02d...', frame_i);
-   
-    RDM_stack(:, :, frame_i) = squareform(pdist(node_data(:, :, frame_i)));
+    
+    output_RDMs(frame_i) = struct('RDM', pdist(node_data(:, :, frame_i)));
+    square_RDM_stack(:, :, frame_i) = squareform(output_RDMs(frame_i).RDM);
     
 end
 
 %% Save the RDM stack
 
-save(fullfile(save_dir, 'bn26_models'), 'RDM_stack');
+save(fullfile(save_dir, 'bn26_models'), 'output_RDMs');
 
 
 %% Display the RDMs
@@ -51,7 +53,7 @@ for frame_i = 1:n_frames
     
     % Really gotta do something about this nonsense
     RDM_name = ['frame ', num2str(frame_i)];
-    rsa.fig.showRDMs(struct('RDM', RDM_stack(:, :, frame_i), 'name', RDM_name), 1, 1, [], 1, [], {}, my_fave_colormap);
+    rsa.fig.showRDMs(struct('RDM', square_RDM_stack(:, :, frame_i), 'name', RDM_name), 1, 1, [], 1, [], {}, my_fave_colormap);
     
     this_figure = gcf;
     
