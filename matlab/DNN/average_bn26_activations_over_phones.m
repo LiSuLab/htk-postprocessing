@@ -3,8 +3,7 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
     %% Paths
 
     load_dir  = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
-    words_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'the_400_used_stimuli');
-    save_dir  = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'figures_activations', 'words');
+    save_dir  = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'figures_activations', 'nodes_per_feature');
     
     
     %% Load the necessary data
@@ -18,6 +17,8 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
     
     %% Constants
     
+    DO_DISPLAY = true;
+
     words = fieldnames(segmentations);
     n_words = numel(words);
     
@@ -90,6 +91,7 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
     % Prepare struct
     
     feature_averages = struct();
+    feature_sds = struct();
     
     for feature_i = 1:n_features
         feature = features{feature_i};
@@ -108,6 +110,38 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
         
         % Average and store in feature struct
         feature_averages.(feature) = mean(data_this_feature, 1);
+        feature_sds.(feature) = std(data_this_feature, 1);
+        
+        
+        %% Make a bar graph
+        
+        if DO_DISPLAY
+            
+            % Make figure
+            
+            this_figure = figure;
+            bar(feature_averages.(feature));
+            this_axis = gca;
+            
+            % error bars
+            hold on;
+            errorbar(feature_averages.(feature), feature_sds.(feature), 'k.');
+            hold off;
+            
+            % label figure
+            
+            title(feature);
+            set(this_axis, 'XTickLabel', features);
+
+            % Save figure
+            
+            this_frame = getframe(this_figure);
+            file_path = fullfile(save_dir, sprintf('feature_activation_%s', feature));
+            imwrite(this_frame.cdata, [file_path, '.png'], 'png');
+
+            close(this_figure);
+            
+        end
         
     end
     
