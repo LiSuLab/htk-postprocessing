@@ -1,4 +1,4 @@
-function average_bn26_activations_over_phones()
+function activations_per_phone = average_bn26_activations_over_phones()
 
     %% Paths
 
@@ -15,7 +15,7 @@ function average_bn26_activations_over_phones()
     bn26 = orderfields(bn26);
     
     %% Constants
-
+    
     words = fieldnames(segmentations);
     n_words = numel(words);
     
@@ -73,6 +73,13 @@ function average_bn26_activations_over_phones()
                     bn26.(word)(segment_frame, :)];     
             end
         end
+    end
+    
+    %% Average over instances of a phone
+    
+    for phone_i = 1:n_phones
+        phone = phones{phone_i};
+        activations_per_phone.(phone) = mean(activations_per_phone.(phone), 1);
     end
 
 end%function
