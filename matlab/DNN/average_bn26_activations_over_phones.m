@@ -25,15 +25,11 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
     phones = get_used_phones(segmentations);
     n_phones = numel(phones);
     
-    MS_per_frame = 10;
+    framestep_ms = 10;
+    framewidth_ms = 110;
     
     
     %% The loop
-    
-    % We want to average together the BN nodes at every occurence of each
-    % phone.
-    %
-    % We will create a phone-indexed struct of activations
     
     % Initialise
     activations_per_phone = struct();
@@ -41,6 +37,11 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
         phone = phones{phone_i};
         activations_per_phone.(phone) = [];
     end
+    
+    % We want to average together the BN nodes at every occurence of each
+    % phone.
+    %
+    % We will create a phone-indexed struct of activations
 
     for word_i = 1:n_words
         word = words{word_i};
@@ -62,14 +63,31 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
             
             %% Get frames in this segment
             
-            segment_ms = [nan, nan];
-            segment_ms(1) = this_word_segmentation(segment_i).onset;
-            segment_ms(2) = this_word_segmentation(segment_i).offset;
-            % to ms
-            segment_ms = double(segment_ms) / 10000;
+            segment_ms = double([ ...
+                this_word_segmentation(segment_i).onset, ...
+                this_word_segmentation(segment_i).offset]) ...
+                / 10000;
             
-            segment_frames = segment_ms ./ MS_per_frame;
+            % Figure out which frames are in this segment
             
+            frame_i = floor(segment_ms / framestep_ms);
+            segment_frames = [];
+            
+            frame_i_in_segment = true;
+            while frame_i_in_segment
+                % First frame in the segment we add automatically
+                segment_frames = [segment_frames, frame_i];
+                
+                % Now check if the next frame will be in the segment
+                frame_i = frame_i + 1;
+                
+                frame_offset = (frame_i * framestep_ms) + framewidth_ms;
+                
+                frame_i_in_segment = (frame_offset <= segment_ms(2));
+            end
+            
+            % +1 here because we're changing the frame_is (which are
+            % 0-indexed) into matlab 1-indexed frame indices
             for segment_frame = segment_frames + 1
                 activations_per_phone.(this_segment_phone) = [ ...
                     activations_per_phone.(this_segment_phone); ...
@@ -89,9 +107,9 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
     
     
     % Prepare struct
-    
+    feature_count    = struct();
     feature_averages = struct();
-    feature_sds = struct();
+    feature_sds      = struct();
     
     for feature_i = 1:n_features
         feature = features{feature_i};
@@ -109,8 +127,12 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
         end
         
         % Average and store in feature struct
+        feature_count.(feature)    = size(data_this_feature, 1);
         feature_averages.(feature) = mean(data_this_feature, 1);
-        feature_sds.(feature) = std(data_this_feature, 1);
+        feature_sds.(feature)      = std(data_this_feature, 1);
+        
+        % Just keep a record of how many frames represent each feature.
+        rsa.util.prints('Averaging together %d items for feature "%s"', feature_count.(feature), feature);
         
         
         %% Make a bar graph
@@ -123,6 +145,10 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
             bar(feature_averages.(feature));
             this_axis = gca;
             
+            % This is a quick hack because I can't be bothered to
+            % programatically figure out the limits.
+            ylim([-5,5]);
+            
             % error bars
             hold on;
             errorbar(feature_averages.(feature), feature_sds.(feature), 'k.');
@@ -131,12 +157,12 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
             % label figure
             
             title(feature);
-            set(this_axis, 'XTickLabel', features);
+            set(gca,'XTick', 1:26);
 
             % Save figure
             
             this_frame = getframe(this_figure);
-            file_path = fullfile(save_dir, sprintf('feature_activation_%s', feature));
+            file_path = fullfile(save_dir, sprintf('activation_feature_%d_%s', feature_i, feature));
             imwrite(this_frame.cdata, [file_path, '.png'], 'png');
 
             close(this_figure);
