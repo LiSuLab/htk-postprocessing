@@ -1,10 +1,11 @@
-function activations_per_phone = average_bn26_activations_over_phones()
+function [feature_averages, activations_per_phone] = average_bn26_activations_over_phones()
 
     %% Paths
 
     load_dir  = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
     words_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'the_400_used_stimuli');
     save_dir  = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'figures_activations', 'words');
+    
     
     %% Load the necessary data
     
@@ -13,6 +14,7 @@ function activations_per_phone = average_bn26_activations_over_phones()
     
     bn26 = load(fullfile(load_dir, 'bn26_activations.mat'));
     bn26 = orderfields(bn26);
+    
     
     %% Constants
     
@@ -23,6 +25,7 @@ function activations_per_phone = average_bn26_activations_over_phones()
     n_phones = numel(phones);
     
     MS_per_frame = 10;
+    
     
     %% The loop
     
@@ -41,21 +44,20 @@ function activations_per_phone = average_bn26_activations_over_phones()
     for word_i = 1:n_words
         word = words{word_i};
         
-        rsa.util.prints('Working on word %s...', word);
-        
         this_word_segmentation = segmentations.(word);
         
         n_segments_this_word = size(this_word_segmentation, 2);
         
         for segment_i = 1:n_segments_this_word
            
-            % Get the segment of this word
+            %% Get the segment of this word
             
             this_segment_phone = this_word_segmentation(segment_i).label;
             
             if strcmpi(this_segment_phone, 'sil')
                 continue;
             end
+            
             
             %% Get frames in this segment
             
@@ -75,11 +77,38 @@ function activations_per_phone = average_bn26_activations_over_phones()
         end
     end
     
-    %% Average over instances of a phone
     
-    for phone_i = 1:n_phones
-        phone = phones{phone_i};
-        activations_per_phone.(phone) = mean(activations_per_phone.(phone), 1);
+    %% Average over features
+    
+    % Get feature matrix
+    
+    feature_matrix = phonetic_feature_matrix();
+    features = fieldnames(feature_matrix);
+    n_features = numel(features);
+    
+    
+    % Prepare struct
+    
+    feature_averages = struct();
+    
+    for feature_i = 1:n_features
+        feature = features{feature_i};
+        
+        phone_is_this_feature = find(feature_matrix.(feature));
+        
+        % Collect data for this feature
+        
+        data_this_feature = [];
+        for phone_i = phone_is_this_feature
+            phone = phones{phone_i};
+            data_this_feature = [ ...
+                data_this_feature; ...
+                activations_per_phone.(phone)];
+        end
+        
+        % Average and store in feature struct
+        feature_averages.(feature) = mean(data_this_feature, 1);
+        
     end
-
+    
 end%function
