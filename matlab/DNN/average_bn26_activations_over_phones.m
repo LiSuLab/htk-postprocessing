@@ -97,6 +97,58 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
     end
     
     
+    %% Average over phones
+    
+    % Prepare structs
+    phone_count    = struct();
+    phone_averages = struct();
+    phone_stds     = struct();
+    phone_sems     = struct();
+    
+    for phone_i = 1:n_phones
+        phone = phones{phone_i};
+        
+        phone_count.(phone)    = size(activations_per_phone.(phone), 1);
+        phone_averages.(phone) = mean(activations_per_phone.(phone), 1);
+        phone_stds.(phone)     = std(activations_per_phone.(phone),  1);
+        phone_sems.(phone) = phone_stds.(phone) / sqrt(phone_count.(phone));
+        
+        rsa.util.prints('Averaging together %d items for phone "%s"', phone_count.(phone), phone);
+        
+        %% Make a bar graph
+        
+        if DO_DISPLAY
+            
+             % Make figure
+            
+            this_figure = figure;
+            bar(phone_averages.(phone));
+            
+            % This is a quick hack because I can't be bothered to
+            % programatically figure out the limits.
+            ylim([-5,5]);
+            
+            % error bars
+            hold on;
+            errorbar(phone_averages.(phone), phone_sems.(phone), 'k.');
+            hold off;
+            
+            % label figure
+            
+            title(phone);
+            set(gca,'XTick', 1:26);
+
+            % Save figure
+            
+            this_frame = getframe(this_figure);
+            file_path = fullfile(save_dir, sprintf('activation_phone_%d_%s', phone_i, phone));
+            imwrite(this_frame.cdata, [file_path, '.png'], 'png');
+
+            close(this_figure);
+        end
+    end
+    
+    
     %% Average over features
     
     % Get feature matrix
@@ -106,10 +158,11 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
     n_features = numel(features);
     
     
-    % Prepare struct
+    % Prepare structs
     feature_count    = struct();
     feature_averages = struct();
-    feature_sds      = struct();
+    feature_stds     = struct();
+    feature_sems     = struct();
     
     for feature_i = 1:n_features
         feature = features{feature_i};
@@ -129,7 +182,8 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
         % Average and store in feature struct
         feature_count.(feature)    = size(data_this_feature, 1);
         feature_averages.(feature) = mean(data_this_feature, 1);
-        feature_sds.(feature)      = std(data_this_feature, 1);
+        feature_stds.(feature)     = std(data_this_feature,  1);
+        feature_sems.(feature) = feature_stds.(feature) / sqrt(feature_count.(feature));
         
         % Just keep a record of how many frames represent each feature.
         rsa.util.prints('Averaging together %d items for feature "%s"', feature_count.(feature), feature);
@@ -143,7 +197,6 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
             
             this_figure = figure;
             bar(feature_averages.(feature));
-            this_axis = gca;
             
             % This is a quick hack because I can't be bothered to
             % programatically figure out the limits.
@@ -151,7 +204,7 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
             
             % error bars
             hold on;
-            errorbar(feature_averages.(feature), feature_sds.(feature), 'k.');
+            errorbar(feature_averages.(feature), feature_sems.(feature), 'k.');
             hold off;
             
             % label figure
