@@ -30,6 +30,10 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
     framestep_ms = 10;
     framewidth_ms = 110;
     
+    % This is a quick hack because I can't be bothered to programatically
+    % figure out the limits.
+    height_lim = [-4, 4];
+    
     
     %% The loop
     
@@ -126,9 +130,7 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
             this_figure = figure;
             bar(phone_averages.(phone));
             
-            % This is a quick hack because I can't be bothered to
-            % programatically figure out the limits.
-            ylim([-3, 3]);
+            ylim(height_lim);
             
             % error bars
             hold on;
@@ -205,9 +207,7 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
             this_figure = figure;
             bar(feature_averages.(feature));
             
-            % This is a quick hack because I can't be bothered to
-            % programatically figure out the limits.
-            ylim([-3,3]);
+            ylim(height_lim);
             
             % error bars
             hold on;
@@ -232,12 +232,28 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
     end
     
     if DO_DISPLAY
+        %% 3d plot
         this_figure = figure;
-        bar3(feat_3d);
-            
-        % This is a quick hack because I can't be bothered to
-        % programatically figure out the limits.
-        ylim([-3,3]);
+        
+        bar3(feat_3d');
+        colormap(lines);
+        
+        xlim([0, n_features + 1]);
+        ylim([0, n_nodes + 1]);
+        % more silly hacks
+        zlim([-3, 3]);
+        
+        set(gca, 'xtick', 1:n_features);
+        set(gca, 'ytick', 1:n_nodes);
+        
+        set(gca, 'xticklabel', features);
+        node_labels = {};
+        for node_i = 1:n_nodes
+            node_labels = [node_labels, {sprintf('node%d', node_i)}];
+        end
+        set(gca, 'yticklabel', node_labels);
+        
+        %% save the 3d plot
             
         this_frame = getframe(this_figure);
         file_path = fullfile(save_dir, 'activation_all_features');
