@@ -22,6 +22,8 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
     words = fieldnames(segmentations);
     n_words = numel(words);
     
+    n_nodes = 26;
+    
     phones = get_used_phones(segmentations);
     n_phones = numel(phones);
     
@@ -126,7 +128,7 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
             
             % This is a quick hack because I can't be bothered to
             % programatically figure out the limits.
-            ylim([-5,5]);
+            ylim([-3, 3]);
             
             % error bars
             hold on;
@@ -136,7 +138,7 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
             % label figure
             
             title(phone);
-            set(gca,'XTick', 1:26);
+            set(gca,'XTick', 1:n_nodes);
 
             % Save figure
             
@@ -164,6 +166,9 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
     feature_stds     = struct();
     feature_sems     = struct();
     
+    % For 3d bar graph
+    feat_3d = nan(n_features, n_nodes);
+    
     for feature_i = 1:n_features
         feature = features{feature_i};
         
@@ -185,6 +190,8 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
         feature_stds.(feature)     = std(data_this_feature,  1);
         feature_sems.(feature) = feature_stds.(feature) / sqrt(feature_count.(feature));
         
+        feat_3d(feature_i, :) = feature_averages.(feature);
+        
         % Just keep a record of how many frames represent each feature.
         rsa.util.prints('Averaging together %d items for feature "%s"', feature_count.(feature), feature);
         
@@ -200,7 +207,7 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
             
             % This is a quick hack because I can't be bothered to
             % programatically figure out the limits.
-            ylim([-5,5]);
+            ylim([-3,3]);
             
             % error bars
             hold on;
@@ -210,7 +217,7 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
             % label figure
             
             title(feature);
-            set(gca,'XTick', 1:26);
+            set(gca,'XTick', 1:n_nodes);
 
             % Save figure
             
@@ -222,6 +229,20 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
             
         end
         
+    end
+    
+    if DO_DISPLAY
+        this_figure = figure;
+        bar3(feat_3d);
+            
+        % This is a quick hack because I can't be bothered to
+        % programatically figure out the limits.
+        ylim([-3,3]);
+            
+        this_frame = getframe(this_figure);
+        file_path = fullfile(save_dir, 'activation_all_features');
+        imwrite(this_frame.cdata, [file_path, '.png'], 'png');
+        close(this_figure);
     end
     
 end%function
