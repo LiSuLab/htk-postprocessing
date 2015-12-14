@@ -1,4 +1,10 @@
-function [feature_averages, activations_per_phone] = average_bn26_activations_over_phones()
+function [activations_per_phone, feature_averages, feature_counts, phone_averages, phone_counts] = average_bn26_activations_over_phones(DO_DISPLAY)
+
+    %% Defaults
+    
+    if ~exist('DO_DISPLAY', 'var')
+        DO_DISPLAY = true;
+    end
 
     %% Paths
 
@@ -16,8 +22,6 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
     
     
     %% Constants
-    
-    DO_DISPLAY = true;
 
     words = fieldnames(segmentations);
     n_words = numel(words);
@@ -106,7 +110,7 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
     %% Average over phones
     
     % Prepare structs
-    phone_count    = struct();
+    phone_counts   = struct();
     phone_averages = struct();
     phone_stds     = struct();
     phone_sems     = struct();
@@ -114,12 +118,12 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
     for phone_i = 1:n_phones
         phone = phones{phone_i};
         
-        phone_count.(phone)    = size(activations_per_phone.(phone), 1);
+        phone_counts.(phone)   = size(activations_per_phone.(phone), 1);
         phone_averages.(phone) = mean(activations_per_phone.(phone), 1);
         phone_stds.(phone)     = std(activations_per_phone.(phone),  1);
-        phone_sems.(phone) = phone_stds.(phone) / sqrt(phone_count.(phone));
+        phone_sems.(phone) = phone_stds.(phone) / sqrt(phone_counts.(phone));
         
-        rsa.util.prints('Averaging together %d items for phone "%s"', phone_count.(phone), phone);
+        rsa.util.prints('Averaging together %d items for phone "%s"', phone_counts.(phone), phone);
         
         %% Make a bar graph
         
@@ -163,7 +167,7 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
     
     
     % Prepare structs
-    feature_count    = struct();
+    feature_counts   = struct();
     feature_averages = struct();
     feature_stds     = struct();
     feature_sems     = struct();
@@ -187,15 +191,15 @@ function [feature_averages, activations_per_phone] = average_bn26_activations_ov
         end
         
         % Average and store in feature struct
-        feature_count.(feature)    = size(data_this_feature, 1);
+        feature_counts.(feature)   = size(data_this_feature, 1);
         feature_averages.(feature) = mean(data_this_feature, 1);
         feature_stds.(feature)     = std(data_this_feature,  1);
-        feature_sems.(feature) = feature_stds.(feature) / sqrt(feature_count.(feature));
+        feature_sems.(feature) = feature_stds.(feature) / sqrt(feature_counts.(feature));
         
         feat_3d(feature_i, :) = feature_averages.(feature);
         
         % Just keep a record of how many frames represent each feature.
-        rsa.util.prints('Averaging together %d items for feature "%s"', feature_count.(feature), feature);
+        rsa.util.prints('Averaging together %d items for feature "%s"', feature_counts.(feature), feature);
         
         
         %% Make a bar graph
