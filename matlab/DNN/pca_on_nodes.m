@@ -1,4 +1,4 @@
-function [coeff, score, latent, tsquared, explained, mu, data_matrix, Zica, A, T, muica] = pca_on_nodes
+function ic_data_matrix = pca_on_nodes(n_ica_components)
 
     load_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
     save_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'figures_activations');
@@ -25,14 +25,22 @@ function [coeff, score, latent, tsquared, explained, mu, data_matrix, Zica, A, T
         data_matrix = [data_matrix; node_responses_this_word];
     end
     
-    [coeff, score, latent, tsquared, explained, mu] = pca(data_matrix);
-    [Zica, A, T, muica] = myICA(data_matrix', 5);
     
-    %orig
-    node_1=4;node_2=16;figure;s=scatter(data_matrix(:, node_1), data_matrix(:, node_2)); s.Marker = '.';lsline;title(sprintf('%d-%d', node_1, node_2));
-    %pca
-    node_1=4;node_2=16;figure;s=scatter(coeff(:, node_1), coeff(:, node_2)); s.Marker = '.';lsline;title(sprintf('%d-%d', node_1, node_2));
-    %ica
-    node_1=1;node_2=2;figure;s=scatter(Zica(node_1,:)', Zica(node_2,:)'); s.Marker = '.';lsline;title(sprintf('%d-%d', node_1, node_2));
+    %% ICA
+    
+    % (d x n): n samples of d-dim state
+    Z = data_matrix';
+    
+    % Do the ica
+    [ ...
+        ...% Z_ica is (r x n) is n samples of r ica components
+        Z_ica, ...
+        A_ica, T_ica, ...
+        ...% mu_ica is sample mean of data
+        mu_ica] = myICA(Z, n_ica_components);
+    %r-dim approx of data: Zr = T \ pinv(A) * Zi + repmat(mu, 1, n)
+    
+    % n samples x r ic
+    ic_data_matrix = Z_ica';
 
 end
