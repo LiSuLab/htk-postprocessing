@@ -46,12 +46,13 @@ def get_min_frame_index(input_dir_path, word_list):
 	return total_frame_min
 
 
-def get_activation_lists(input_dir_path, word_list, frame_cap):
+def get_activation_lists(input_dir_path, word_list, frame_cap, lines_per_block):
 	"""
 
 	:param input_dir_path:
 	:param word_list:
 	:param frame_cap:
+	:param lines_per_block: The number of lines in a single block of nodes
 	:return activations: a word-keyed dictionary of frame-indexed lists of node-indexed lists of activations
 	"""
 
@@ -72,7 +73,10 @@ def get_activation_lists(input_dir_path, word_list, frame_cap):
 
 		# The state based on the most recently read line.
 		# To begin with we haven't read any lines.
-		line_state = ActivationLines.Other
+		#
+		# -1 will refer to a non-activatiion line
+		# Otherwise they will be 1-indexed (since lines are).
+		block_line_i = -1
 
 		# The list of activations for this frame. This starts as empty but will grow as successive lines of each frame are read.
 		frame_activations = []
@@ -86,8 +90,7 @@ def get_activation_lists(input_dir_path, word_list, frame_cap):
 			# Read through each line of the file in turn
 			for line in word_file:
 
-				# This enum-based state machine may look like I know what I'm doing, but this code (while it does work) is actually rather fragile. I'm not doing any error checking and there are no failure states
-				if line_state is ActivationLines.Other or line_state is ActivationLines.Nodes2026:
+				if block_line_i == -1 or block_line_i == lines_per_block:
 					# If we most recently read something which wasn't relevant, we're ready to look for a new frame-index match
 					# Alternatively, we just read the last line of a frame activation list, and are ready to look for another first line.
 
@@ -112,11 +115,12 @@ def get_activation_lists(input_dir_path, word_list, frame_cap):
 						frame_activations = activations_this_line.copy()
 
 						# Change the state to match what we've just read
-						line_state = ActivationLines.FrameNodes09
+						# In this case, line 1 (which is special)
+						block_line_i = 1
 
 					# Otherwise we go on to read the next line
 
-				elif line_state is ActivationLines.FrameNodes09:
+				else:
 					# We're expect to read 10 more activations
 
 					# Read them in
@@ -128,24 +132,13 @@ def get_activation_lists(input_dir_path, word_list, frame_cap):
 					frame_activations.extend(activations_this_line.copy())
 
 					# Change the state to match what we've just read
-					line_state = ActivationLines.Nodes1019
+					# In this case, we've read an extra line
+					block_line_i += 1
 
-				elif line_state is ActivationLines.Nodes1019:
-					# We're expect to read 6 more activations
+					if block_line_i == lines_per_block:
+						# If we've just read the last line in a block, we need to save out the data
+						word_activations.append(frame_activations)
 
-					# Read them in
-					activations_this_line = [ float (i)
-					                          for i
-					                          in line.split() ]
-
-					# Add them to the current activations for this line
-					frame_activations.extend(activations_this_line.copy())
-
-					# We've now got all the activations for this frame, so we'll record that list somewhere
-					word_activations.append(frame_activations)
-
-					# Change the state to match what we've just read
-					line_state = ActivationLines.Nodes2026
 
 		# Now save this word's activations list into a dictionary keyed on that word
 		activations[word] = word_activations.copy()
@@ -176,11 +169,14 @@ def main():
 	Do dat analysis.
 	"""
 
-	layer_name = 'hidden_layer_6'
+	layer_name = 'hidden_layer_2'
+
+	# The number of lines per block of node activations (100 for a non-bn hidden layer)
+	lines_per_block = 100
 
 	# Define some paths
 	input_dir_path      = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'scratch_htk', '{0}_log'.format(layer_name))
-	output_dir_path     = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'py_out', layer_name)
+	output_dir_path     = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'py_out')
 	word_list_file_path = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'Stimuli-Lexpro-MEG-Single-col.txt')
 
 	# Get the words from the words file
@@ -189,7 +185,7 @@ def main():
 	# The number of frames to use in the analysis
 	frame_cap = 0
 
-	activations = get_activation_lists(input_dir_path, word_list, frame_cap)
+	activations = get_activation_lists(input_dir_path, word_list, frame_cap, lines_per_block)
 
 	save_activations(activations, output_dir_path, layer_name)
 
