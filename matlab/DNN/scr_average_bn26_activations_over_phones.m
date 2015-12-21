@@ -1,4 +1,4 @@
-function [activations_per_phone, feature_averages, feature_counts, phone_averages, phone_counts] = average_bn26_activations_over_phones(DO_DISPLAY)
+function [activations_per_phone, feature_averages, feature_counts, phone_averages, phone_counts] = scr_average_bn26_activations_over_phones(DO_DISPLAY)
 
     %% Defaults
     

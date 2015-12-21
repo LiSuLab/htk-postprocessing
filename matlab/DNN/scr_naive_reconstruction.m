@@ -1,4 +1,4 @@
-function naive_reconstruction()
+function scr_naive_reconstruction()
 
     load_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
     stimuli_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'the_400_used_stimuli');

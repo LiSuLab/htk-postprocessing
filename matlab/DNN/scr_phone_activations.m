@@ -1,6 +1,6 @@
 % Produces sliding-window-matched plots for the instances of each phone for
 % each word.
-function [phone_models] = phone_activations()
+function [phone_models] = scr_phone_activations()
     
     load_dir  = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
 

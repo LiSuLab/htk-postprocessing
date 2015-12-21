@@ -1,4 +1,4 @@
-function ic_data_matrix = pca_on_nodes(n_ica_components)
+function [Z_ica] = ica_on_nodes(n_ica_components)
 
     load_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
     save_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'figures_activations');
@@ -39,8 +39,5 @@ function ic_data_matrix = pca_on_nodes(n_ica_components)
         ...% mu_ica is sample mean of data
         mu_ica] = myICA(Z, n_ica_components);
     %r-dim approx of data: Zr = T \ pinv(A) * Zi + repmat(mu, 1, n)
-    
-    % n samples x r ic
-    ic_data_matrix = Z_ica';
 
 end
