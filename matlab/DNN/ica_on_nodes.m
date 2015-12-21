@@ -1,9 +1,9 @@
-function [Z_ica] = ica_on_nodes(n_ica_components)
+function [Z_ica, Mix_ica, Sep_ica] = ica_on_nodes()
 
     load_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
     save_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'figures_activations');
 
-    bn26 = load(fullfile(load_dir, 'bn26_activations.mat'));
+    bn26 = load(fullfile(load_dir, 'hidden_layer_7BN_activations.mat'));
     bn26 = orderfields(bn26);
 
     words = fieldnames(bn26);
@@ -35,9 +35,9 @@ function [Z_ica] = ica_on_nodes(n_ica_components)
     [ ...
         ...% Z_ica is (r x n) is n samples of r ica components
         Z_ica, ...
-        A_ica, T_ica, ...
-        ...% mu_ica is sample mean of data
-        mu_ica] = myICA(Z, n_ica_components);
-    %r-dim approx of data: Zr = T \ pinv(A) * Zi + repmat(mu, 1, n)
+        ...% Mixing matrix
+        Mix_ica, ...
+        ...% Separating matrix
+        Sep_ica] = fastica(Z);
 
 end
