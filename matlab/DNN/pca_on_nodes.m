@@ -3,7 +3,7 @@ function ic_data_matrix = pca_on_nodes(n_ica_components)
     load_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
     save_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'figures_activations');
 
-    bn26 = load(fullfile(load_dir, 'bn26_activations.mat'));
+    bn26 = load(fullfile(load_dir, 'hidden_layer_7BN_activations.mat'));
     bn26 = orderfields(bn26);
 
     words = fieldnames(bn26);
