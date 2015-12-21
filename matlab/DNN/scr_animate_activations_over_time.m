@@ -1,4 +1,3 @@
-
 % Produces an animation over frames for bn activations for each word.
 
 load_dir = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
