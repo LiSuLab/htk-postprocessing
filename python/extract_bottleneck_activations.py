@@ -101,7 +101,7 @@ def get_activation_lists(input_dir_path, word_list, frame_cap):
 						current_frame_index = int(frame_data_1_match.group("frame_id"))
 
 						# We don't want to bother looking past the frame cap, so if we get to a frame which is past it, we can break out of this line loop.
-						if frame_cap > 0 and current_frame_index > frame_cap:
+						if 0 < frame_cap < current_frame_index:
 							break
 
 						# Extract the list of activations
@@ -195,7 +195,7 @@ def main():
 	word_list_file_path = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'Stimuli-Lexpro-MEG-Single-col.txt')
 
 	# The number of nodes in the bottleneck layer
-	BN_NODES = 26;
+	BN_NODES = 26
 
 	# Get the words from the words file
 	word_list = list(get_word_list(word_list_file_path))
