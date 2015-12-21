@@ -153,25 +153,12 @@ def get_activation_lists(input_dir_path, word_list, frame_cap):
 	return activations
 
 
-class ActivationLines(Enum):
-	"""
-	Represents the dirrerent line types of node activations in a file.
-	"""
-	# A non-frame, non-nodes line
-	Other        = 0
-	# The line with the frame index and nodes 0–9
-	FrameNodes09 = 1
-	# The line with nodes 10–19
-	Nodes1019    = 2
-	# The line with nodes 20–26
-	Nodes2026    = 3
-
-
-def save_activations(activations, output_dir_path):
+def save_activations(activations, output_dir_path, layer_name):
 	"""
 	Saves mat files for the activations
 	:param activations:
 	:param output_dir_path:
+	:param layer_name:
 	"""
 	for word in activations.keys():
 		# Convert data into numpy array
@@ -179,7 +166,7 @@ def save_activations(activations, output_dir_path):
 
 	# Save
 	scipy.io.savemat(
-		os.path.join(output_dir_path, "bn26_activations"),
+		os.path.join(output_dir_path, "{0}_activations".format(layer_name)),
 		activations,
 		appendmat = True)
 
@@ -189,23 +176,22 @@ def main():
 	Do dat analysis.
 	"""
 
-	# Define some paths
-	input_dir_path      = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'bottleneck_log')
-	output_dir_path     = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'py_out')
-	word_list_file_path = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'Stimuli-Lexpro-MEG-Single-col.txt')
+	layer_name = 'hidden_layer_6'
 
-	# The number of nodes in the bottleneck layer
-	BN_NODES = 26
+	# Define some paths
+	input_dir_path      = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'scratch_htk', '{0}_log'.format(layer_name))
+	output_dir_path     = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'py_out', layer_name)
+	word_list_file_path = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'Stimuli-Lexpro-MEG-Single-col.txt')
 
 	# Get the words from the words file
 	word_list = list(get_word_list(word_list_file_path))
 
 	# The number of frames to use in the analysis
-	frame_cap = 0#get_min_frame_index(input_dir_path, word_list)
+	frame_cap = 0
 
 	activations = get_activation_lists(input_dir_path, word_list, frame_cap)
 
-	save_activations(activations, output_dir_path)
+	save_activations(activations, output_dir_path, layer_name)
 
 
 
