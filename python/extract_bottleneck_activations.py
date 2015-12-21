@@ -194,9 +194,6 @@ def main():
 	output_dir_path     = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'py_out')
 	word_list_file_path = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'Stimuli-Lexpro-MEG-Single-col.txt')
 
-	# The number of nodes in the bottleneck layer
-	BN_NODES = 26
-
 	# Get the words from the words file
 	word_list = list(get_word_list(word_list_file_path))
 
