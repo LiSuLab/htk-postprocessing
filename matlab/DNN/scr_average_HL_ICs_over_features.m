@@ -201,7 +201,7 @@ function [activations_per_phone, feature_averages, feature_counts, phone_average
         feature_stds.(feature)     = std(data_this_feature, 0, 2);
         feature_sems.(feature) = feature_stds.(feature) / sqrt(feature_counts.(feature));
         
-        feat_3d(feature_i, :) = feature_averages.(feature);
+        feat_3d(feature_i, :) = feature_averages.(feature)';
         
         % Just keep a record of how many frames represent each feature.
         rsa.util.prints('Averaging together %d items for feature "%s"', feature_counts.(feature), feature);
