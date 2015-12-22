@@ -250,7 +250,7 @@ function [activations_per_phone, feature_averages, feature_counts, phone_average
         xlim([0, n_features + 1]);
         ylim([0, n_nodes + 1]);
         % more silly hacks
-        zlim([-2, 2]);
+        zlim([-1.5, 1.5]);
         
         set(gca, 'xtick', 1:n_features);
         set(gca, 'ytick', 1:n_nodes);
