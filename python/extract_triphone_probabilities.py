@@ -67,7 +67,7 @@ def get_triphone_probability_lists(input_filename, frame_cap, silent):
     with open(input_filename, encoding="utf-8") as input_file:
         # Go through the file line by line
         for line in input_file:
-            word_path_match = word_path_re_dnn.match(line)
+            word_path_match = word_path_re.match(line)
             frame_data_match = frame_data_re.match(line)
 
             # So what's up with this line we've just read?
@@ -475,7 +475,7 @@ def main(argv):
 
     triphone_count_by_frame, used_triphones_overall = which_triphones_are_used(triphone_probability_lists, word_list, frame_cap, output_dir, silent)
 
-    likelihood_data = apply_triphone_probability_model(triphone_probability_lists, word_list, PHONE_LIST_DNN,  used_triphones_overall, frame_cap, silent)
+    likelihood_data = apply_triphone_probability_model(triphone_probability_lists, word_list, PHONE_LIST,  used_triphones_overall, frame_cap, silent)
 
     save_features(likelihood_data, output_dir, frame_cap, silent)
 
