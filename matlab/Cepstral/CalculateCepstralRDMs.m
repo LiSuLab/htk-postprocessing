@@ -48,6 +48,8 @@ function models = CalculateCepstralRDMs
 
     % Frames per window. For HTK, each frame is 10ms.
     window_width_in_frames = 2;
+    
+    window_width_ms = window_width_in_frames * 10;
 
     n_windows = n_frames - window_width_in_frames + 1;
 
@@ -85,7 +87,7 @@ function models = CalculateCepstralRDMs
 
     end%for
     
-    models_file_name = sprintf('cepstral_models_%s%02d-%s%02d.mat', coeff_types_for_model, coeff_indices_for_model(1), coeff_types_for_model, coeff_indices_for_model(end));
+    models_file_name = sprintf('cepstral_models_win%d_%s%02d-%s%02d.mat', window_width_ms, coeff_types_for_model, coeff_indices_for_model(1), coeff_types_for_model, coeff_indices_for_model(end));
     models_file_path = fullfile(output_dir, models_file_name);
 
     save(models_file_path, 'models');
