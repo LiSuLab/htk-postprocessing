@@ -169,7 +169,7 @@ def process_args(switches, parameters, commands):
         "C=<CC-list> "
         "D=<DC-list> "
         "A=<AC-list> "
-        "frames=<frames|20>"
+        "frames=<frames|27>"
     )
 
     silent = "S" in switches
@@ -199,7 +199,7 @@ def process_args(switches, parameters, commands):
     frame_cap = get_parameter(parameters, "frames", usage_text=usage_text)
 
     # set defaults
-    frame_cap = frame_cap if frame_cap != "" else 20 # default of 20
+    frame_cap = frame_cap if frame_cap != "" else 27 # default of 27
 
     return silent, input_filename, output_dirname, words_filename, c_list, d_list, a_list, frame_cap
 
