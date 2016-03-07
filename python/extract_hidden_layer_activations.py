@@ -1,6 +1,6 @@
 # coding=utf-8
 """
-Extract some cepstral coefficients from HTK's output file.
+Extract hidden layer activations from HTK's output file.
 """
 
 import sys
@@ -72,10 +72,12 @@ def get_activation_lists(input_dir_path, word_list, frame_cap, lines_per_block):
 		prints("Getting activations for \"{0}\"".format(word))
 
 		# The state based on the most recently read line.
-		# To begin with we haven't read any lines.
+		# It will index the most recently read line within a block.
 		#
 		# -1 will refer to a non-activatiion line
 		# Otherwise they will be 1-indexed (since lines are).
+		#
+		# To begin with we haven't read any lines.
 		block_line_i = -1
 
 		# The list of activations for this frame. This starts as empty but will grow as successive lines of each frame are read.
@@ -103,7 +105,7 @@ def get_activation_lists(input_dir_path, word_list, frame_cap, lines_per_block):
 						# Remember which frame we're looking at right now
 						current_frame_index = int(frame_data_1_match.group("frame_id"))
 
-						# We don't want to bother looking past the frame cap, so if we get to a frame which is past it, we can break out of this line loop.
+						# We don't want to bother looking past the frame cap, so if we get to a frame which is past it, we can break out of this line loop. In case frame_cap is equal to zero, we skip this check.
 						if 0 < frame_cap < current_frame_index:
 							break
 
@@ -131,8 +133,7 @@ def get_activation_lists(input_dir_path, word_list, frame_cap, lines_per_block):
 					# Add them to the current activations for this line
 					frame_activations.extend(activations_this_line.copy())
 
-					# Change the state to match what we've just read
-					# In this case, we've read an extra line
+					# Change the state to match the fact that we've read an extra line.
 					block_line_i += 1
 
 					if block_line_i == lines_per_block:
@@ -169,13 +170,18 @@ def main():
 	Do dat analysis.
 	"""
 
-	layer_name = 'hidden_layer_2'
+	#             hidden_layer_2
+	#              ...
+	#             hidden_layer_7BN
+	layer_name = 'hidden_layer_7BN'
 
-	# The number of lines per block of node activations (100 for a non-bn hidden layer)
-	lines_per_block = 100
+	# The number of lines per block of node activations
+	#  100 for a non-bn hidden layer
+	#  3 for a bn layer
+	lines_per_block = 3
 
 	# Define some paths
-	input_dir_path      = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'scratch_htk', '{0}_log'.format(layer_name))
+	input_dir_path      = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'htk_out', '{0}_log'.format(layer_name))
 	output_dir_path     = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'py_out')
 	word_list_file_path = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'Stimuli-Lexpro-MEG-Single-col.txt')
 
@@ -183,6 +189,7 @@ def main():
 	word_list = list(get_word_list(word_list_file_path))
 
 	# The number of frames to use in the analysis
+	#  0 means no cap
 	frame_cap = 0
 
 	activations = get_activation_lists(input_dir_path, word_list, frame_cap, lines_per_block)
