@@ -1,6 +1,6 @@
-% Produces sliding-window-matched plots for the instances of each phone for
-% each word.
-function [feature_models] = feature_traces()
+% Produces sliding-window-matched plots for the instances of each feature
+% for each word.
+function [feature_models] = feature_trace_extraction()
 
     load_dir  = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
 
