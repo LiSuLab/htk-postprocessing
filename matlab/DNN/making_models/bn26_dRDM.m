@@ -2,7 +2,7 @@ function dRDM = bn26_dRDM(distance_type)
 
     if ~exist('distance_type', 'var'), distance_type = 'correlation'; end
 
-    bn_activations = load('/imaging/cw04/CSLB/Analysis_DNN/Models/hidden_layer_7BN_activations.mat');
+    bn_activations = load('/Users/cai/Desktop/scratch/py_out/hidden_layer_7BN_activations.mat');
     
     words = fieldnames(bn_activations);
     n_words = numel(words);
