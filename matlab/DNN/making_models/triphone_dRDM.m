@@ -12,9 +12,10 @@ function dRDM = triphone_dRDM(distance_type)
     % frame to begin with.  This is just an aspect of using HTK's output.
     [n_timepoints_trimmed, n_triphones] = size(triphone_data.(words{1}));
     
+    dRDM = struct();
+    
     dRDM(1).RDM = squareform(zeros(n_words, n_words));
     
-    dRDM = struct();
     for t = 1:n_timepoints_trimmed
        
         data_this_frame = nan(n_words, n_triphones);
