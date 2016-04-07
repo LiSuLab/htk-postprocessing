@@ -9,10 +9,10 @@ function dRDM = feature_dRDM(distance_type)
     
     [n_words, n_timepoints] = size(feature_traces.(features{1}));
     
-    n_timepoints = 27;
+    frame_cap = 27;
     
     dRDM = struct();
-    for t = 1:n_timepoints
+    for t = 1:min([n_timepoints, frame_cap])
     
         % For each timepoint, build a word-by-nfeatures data matrix
         data_this_t = nan(n_words, n_features);
