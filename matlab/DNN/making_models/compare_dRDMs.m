@@ -41,6 +41,7 @@ function [dCM, dP, dPoints] = compare_dRDMs();
         0., 1., 1.; ...
         0., 0., 1.];
     
+    all_models = [];
     for t = 1:n_frames
         
         % Get RDMs in for this frame
@@ -48,6 +49,7 @@ function [dCM, dP, dPoints] = compare_dRDMs();
         for m = 1:n_models
             model_name = model_names{m};
             models_this_frame(m, :) = dRDMs(t).(model_name).RDM;
+            all_models = [all_models; models_this_frame(m, :)];
         end
         
         % dynamic correlation matrix
@@ -87,8 +89,20 @@ function [dCM, dP, dPoints] = compare_dRDMs();
             text(dPoints(m,1,t), dPoints(m,2,t), dRDMs(t).(model_names{m}).Name);
         end
         subplot(2,1,2);
-        imagesc(dCM(:,:,t)); colorbar
+        imagesc(dCM(:,:,t)); colorbar;
         
     end
+    
+    % All Frames Together
+    [CM, P] = corr(all_models', 'type', rdm_corr_type);
+    dm = 1-CM;
+    dm(isnan(dm)) = 1;
+    dm(find(eye(size(dm, 1)))) = 0; %#ok<FNDSB>
+    figure;
+    subplot(2,1,1);
+    m = mdscale(dm, 2, 'Criterion', 'sammon', 'Start', 'random');
+    scatter(m(:, 1), m(:, 2), 140, repmat(c, n_frames, 1), 'filled');
+    subplot(2,1,2);
+    imagesc(dm); colorbar;
     
 end
