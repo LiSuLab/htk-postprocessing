@@ -1,41 +1,90 @@
-function [dCM, aCM] = compare_dRDMs(correlation_type)
+function [dCM, dP, dPoints] = compare_dRDMs();
 
-    if ~exist('correlation_type', 'var'), correlation_type = 'Spearman'; end
+    rdm_corr_type = 'Spearman';
+    rdm_type    = 'correlation';
 
-    phon_RDMs = phone_dRDM();    % 1
-    feat_RDMs = feature_dRDM();  % 2
-    trip_RDMs = triphone_dRDM(); % 3
-    bn26_RDMs = bn26_dRDM();     % 4
+    phone_RDMs = phone_dRDM(rdm_type);
+    feature_RDMs = feature_dRDM(rdm_type);
+    triphone_RDMs = triphone_dRDM(rdm_type);
     
-    % should be the same for all four
-    n_frames = numel(bn26_RDMs);
-    data_size = numel(bn26_RDMs(1).RDM);
-    n_RDMs = n_frames * 4;
+    % Build model struct
     
-    data_overall = nan(n_RDMs, data_size);
+    % Start with hidden layers
+    dRDMs = dnn_layer_dRDMs(rdm_type);
+    
+    n_frames = numel(dRDMs);
+    
+    for t = 1:n_frames
+        dRDMs(t).Phones.Name = sprintf('phones,t=%02d', t);
+        dRDMs(t).Phones.RDM = phone_RDMs(t).RDM;
+        
+        dRDMs(t).Features.Name = sprintf('features,t=%02d', t);
+        dRDMs(t).Features.RDM = feature_RDMs(t).RDM;
+        
+        dRDMs(t).Triphones.Name = sprintf('triphones,t=%02d', t);
+        dRDMs(t).Triphones.RDM = triphone_RDMs(t).RDM;
+    end
+    
+    model_names = fieldnames(dRDMs);
+    n_models = numel(model_names);
+    
+    model_size = numel(dRDMs(1).(model_names{1}).RDM);
+    
+    c = [ ...
+        0., 0., 0.; ...
+        .2, 0., 0.; ...
+        .4, 0., 0.; ...
+        .6, 0., 0.; ...
+        .8, 0., 0.; ...
+        1., 0., 0.; ...
+        0., 1., 0.; ...
+        0., 1., 1.; ...
+        0., 0., 1.];
     
     for t = 1:n_frames
         
-        % dCM
-        data_this_frame = [ ...
-            phon_RDMs(t).RDM; ...
-            feat_RDMs(t).RDM; ...
-            trip_RDMs(t).RDM; ...
-            bn26_RDMs(t).RDM];
+        % Get RDMs in for this frame
+        models_this_frame = nan(n_models, model_size);
+        for m = 1:n_models
+            model_name = model_names{m};
+            models_this_frame(m, :) = dRDMs(t).(model_name).RDM;
+        end
         
-        data_overall(t + (0 * n_frames), :) = phon_RDMs(t).RDM;
-        data_overall(t + (1 * n_frames), :) = feat_RDMs(t).RDM;
-        data_overall(t + (2 * n_frames), :) = trip_RDMs(t).RDM;
-        data_overall(t + (3 * n_frames), :) = bn26_RDMs(t).RDM;
+        % dynamic correlation matrix
+        [dCM(:, :, t), dP(:, :, t)] = corr( ...
+            models_this_frame', ...
+            'type', rdm_corr_type);
         
-        [dCM(t).CM, dCM(t).p] = corr( ...
-            data_this_frame', ...
-            'type', correlation_type);
+        % dynamic distance matrix
+        dm = 1 - dCM(:, :, t);
+        % where there are nans, put large distance
+        dm(isnan(dm)) = 1;
+        % make sure every point is at distance zero from itself
+        dm(find(eye(size(dm, 1)))) = 0; %#ok<FNDSB> % 'fixing' this actually breaks it
+        dDM(:, :, t) = dm;
+        
+        % Look at this gross abuse of the lack of static typing in Matlab
+        if t == 1
+            start = 'random';
+        else
+            start = dPoints(:, :, t-1);
+        end
+        
+        dPoints(:, :, t) = mdscale( ...
+            dDM(:, :, t), 2 ...
+            ,'Criterion', 'sammon' ...
+            ...%,'Weights', 0.5*blkdiag(ones(6),ones(3)) + 0.5*ones(9) ...
+            ...%,'Options', struct( ...
+            ...%    'MaxIter', 300) ...
+            ...%,'Start', start ...
+            );
+        
+        figure;
+        subplot(2,1,1);
+        scatter(dPoints(:, 1, t), dPoints(:, 2, t), 140, c, 'filled');
+        subplot(2,1,2);
+        imagesc(dCM(:,:,t)); colorbar
         
     end
-    
-    [aCM.CM, aCM.p] = corr( ...
-        data_overall', ...
-        'type', correlation_type);
     
 end

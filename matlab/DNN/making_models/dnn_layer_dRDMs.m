@@ -1,13 +1,13 @@
-function dRDMs = dynamic_hidden_layer_models(distance_type)
+function dRDMs = dnn_layer_dRDMs(distance_type)
 
     if ~exist('distance_type', 'var'), distance_type = 'correlation'; end
 
-    node_activations.L2   = load('/imaging/cw04/CSLB/Analysis_DNN/Models/hidden_layer_2_activations.mat');
-    node_activations.L3   = load('/imaging/cw04/CSLB/Analysis_DNN/Models/hidden_layer_3_activations.mat');
-    node_activations.L4   = load('/imaging/cw04/CSLB/Analysis_DNN/Models/hidden_layer_4_activations.mat');
-    node_activations.L5   = load('/imaging/cw04/CSLB/Analysis_DNN/Models/hidden_layer_5_activations.mat');
-    node_activations.L6   = load('/imaging/cw04/CSLB/Analysis_DNN/Models/hidden_layer_6_activations.mat');
-    node_activations.L7BN = load('/imaging/cw04/CSLB/Analysis_DNN/Models/hidden_layer_7BN_activations.mat');
+    node_activations.L2   = load('/Users/cai/Desktop/scratch/py_out/hidden_layer_2_activations.mat');
+    node_activations.L3   = load('/Users/cai/Desktop/scratch/py_out/hidden_layer_3_activations.mat');
+    node_activations.L4   = load('/Users/cai/Desktop/scratch/py_out/hidden_layer_4_activations.mat');
+    node_activations.L5   = load('/Users/cai/Desktop/scratch/py_out/hidden_layer_5_activations.mat');
+    node_activations.L6   = load('/Users/cai/Desktop/scratch/py_out/hidden_layer_6_activations.mat');
+    node_activations.L7BN = load('/Users/cai/Desktop/scratch/py_out/hidden_layer_7BN_activations.mat');
     
     layer_names = fieldnames(node_activations);
     n_layers = numel(layer_names);
