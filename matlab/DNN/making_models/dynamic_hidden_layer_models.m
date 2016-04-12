@@ -1,4 +1,4 @@
-function dRDM = bn26_dRDM(distance_type)
+function dRDMs = dynamic_hidden_layer_models(distance_type)
 
     if ~exist('distance_type', 'var'), distance_type = 'correlation'; end
 
@@ -14,7 +14,7 @@ function dRDM = bn26_dRDM(distance_type)
         shortest_word_length = min(shortest_word_length, word_length);
     end
     
-    dRDM = struct();
+    dRDMs = struct();
     for t = 1:shortest_word_length
        data_this_timepoint = nan(n_words, n_bn_nodes);
        for word_i = 1:n_words
@@ -23,7 +23,7 @@ function dRDM = bn26_dRDM(distance_type)
            data_this_timepoint(word_i, :) = word_activation(t, :);
        end
        RDM_this_timepoint = pdist(data_this_timepoint, distance_type);
-       dRDM(t).RDM = RDM_this_timepoint;
+       dRDMs(t).RDM = RDM_this_timepoint;
     end
 
 end%function
