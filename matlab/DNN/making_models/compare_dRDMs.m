@@ -82,6 +82,10 @@ function [dCM, dP, dPoints] = compare_dRDMs();
         figure;
         subplot(2,1,1);
         scatter(dPoints(:, 1, t), dPoints(:, 2, t), 140, c, 'filled');
+        % Label them
+        for m = 1:n_models
+            text(dPoints(m,1,t), dPoints(m,2,t), dRDMs(t).(model_names{m}).Name);
+        end
         subplot(2,1,2);
         imagesc(dCM(:,:,t)); colorbar
         
