@@ -3,20 +3,11 @@
 Extract some cepstral coefficients from HTK's output file.
 """
 
-import glob
 import re
 import scipy
 import scipy.io
 
-from cw_common import *
-
-
-def ece_get_words(in_path):
-	path_list = glob.iglob(os.path.join(in_path, '*.fbk.txt'))
-	file_list = [os.path.basename(file_path) for file_path in path_list]
-	word_list = [file_name.split('.')[0] for file_name in file_list]
-	word_list.sort()
-	return word_list
+from htk_extraction_tools import *
 
 
 def extract_fbanks_from_line(fbank_line):
@@ -127,14 +118,14 @@ def transform_and_save(word_list, mfb_dict, earliest_final_frame, out_path):
 def main():
 
 	# for ece
-	# in_path = '/Users/cai/Desktop/ece_scratch/htk_out/ece_single_words_hlisted'
-	# out_path = '/Users/cai/Desktop/ece_scratch/py_out/ece_mfb/'
+	in_path = '/Users/cai/Desktop/ece_scratch/htk_out/ece_single_words_hlisted'
+	out_path = '/Users/cai/Desktop/ece_scratch/py_out/ece_mfb/'
 
 	# for lexpro
-	in_path = '/Users/cai/Desktop/scratch/htk_out/filterbank_hlisted'
-	out_path = '/Users/cai/Desktop/scratch/py_out/filterbank'
+	# in_path = '/Users/cai/Desktop/scratch/htk_out/filterbank_hlisted'
+	# out_path = '/Users/cai/Desktop/scratch/py_out/filterbank'
 
-	word_list = ece_get_words(in_path)
+	word_list = get_word_list_from_file_list(in_path, 'fbk.txt')
 
 	mfb_dict, earliest_final_frame = pull_fbk_values(in_path, word_list)
 

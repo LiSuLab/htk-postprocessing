@@ -1,6 +1,6 @@
 function dRDM = mfb_dRDM(distance_type)
 
-    input_dir  = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out', 'filterbank');
+    input_dir  = fullfile('/Users', 'cai', 'Desktop', 'ece_scratch', 'py_out', 'ece_mfb');
     
     TSTEP_ms = 10;
     WWIDTH_ms = 25;
@@ -35,7 +35,7 @@ function dRDM = mfb_dRDM(distance_type)
         window_end = window_start + WWIDTH_ms;
         
         dRDM(f).RDM = rdm_this_frame;
-        dRDM(f).Name = sprintf('Ece mel filterbank frame%02d [%d, %d]ms.', f-1, window_start, window_end);
+        dRDM(f).Name = sprintf('Ece mel filterbank frame%02d [%03d, %03d]ms.', f-1, window_start, window_end);
         
     end
     
