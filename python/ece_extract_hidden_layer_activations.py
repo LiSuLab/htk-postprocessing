@@ -5,43 +5,13 @@ Extract hidden layer activations from HTK's output file.
 
 import re
 
-import numpy
 import scipy
 import scipy.io
 
 from htk_extraction_tools import *
 
 
-def get_min_frame_index(input_dir_path, word_list):
-	"""
-	Gets the smallest final frame index amongst all word in the list.
-	:param input_dir_path:
-	:param word_list:
-	:return total_fram_min: the smallest final-frame inde in any word
-	"""
-
-	# Regular expression for frame and list of node activations
-	frame_data_1_re = re.compile((
-			# The frame number
-			r"(?P<frame_id>[0-9]+):\s+"
-			# The list of activation values
-			r"(?P<activation_list_1>(?:-?[0-9]+\.?[0-9]+\s*)+)$"))
-
-	total_frame_min = sys.maxsize
-	for word in word_list:
-		current_word_frame_max = 0
-		word_file_path = os.path.join(input_dir_path, "{0}.log".format(word))
-		with open(word_file_path, 'r', encoding='utf-8') as word_file:
-			for line in word_file:
-				frame_data_1_match = frame_data_1_re.match(line)
-				if frame_data_1_match:
-					current_word_frame_max = int(frame_data_1_match.group("frame_id"))
-		total_frame_min = min(total_frame_min, current_word_frame_max)
-
-	return total_frame_min
-
-
-def get_activation_lists(input_dir_path, word_list, lines_per_block):
+def get_activation_lists(input_dir_path, word_list, lines_per_block, suffix):
 	"""
 
 	:param input_dir_path:
@@ -50,15 +20,7 @@ def get_activation_lists(input_dir_path, word_list, lines_per_block):
 	:return activations: a word-keyed dictionary of frame-indexed lists of node-indexed lists of activations
 	"""
 
-	# Regular expression for frame and list of node activations
-	frame_ident_line_re = re.compile((
-			r"^"
-			# The frame number
-			r"(?P<frame_id>[0-9]+)"
-			r":"
-			# The list of activation values
-			r"(?P<activation_list_1>(?:\s[0-9\-\.]+)+)"
-			r"$"))
+	min_max = 999999 # a really big number to approximate infinity
 
 	# a word-keyed dictionary of frame-indexed lists of node-indexed lists of activations.
 	activations = {}
@@ -68,88 +30,124 @@ def get_activation_lists(input_dir_path, word_list, lines_per_block):
 
 		prints("Getting activations for \"{0}\"".format(word))
 
-		# The state based on the most recently read line.
-		# It will index the most recently read line within a block.
-		#
-		# -1 will refer to a non-activatiion line
-		# Otherwise they will be 1-indexed (since lines are).
-		#
-		# To begin with we haven't read any lines.
-		block_line_i = -1
+		word_file_path = os.path.join(input_dir_path, "{0}.{1}".format(word, suffix))
 
-		# The list of activations for this frame. This starts as empty but will grow as successive lines of each frame are read.
-		frame_activations = []
+		word_activations, last_frame = single_word_activations(word_file_path, lines_per_block)
 
-		# The list of activation lists for this word. There should be one entry per frame, each entry should be a list of activations for each node.
-		word_activations = []
-
-		word_file_path = os.path.join(input_dir_path, "{0}.log".format(word))
-		with open(word_file_path, 'r', encoding='utf-8') as word_file:
-
-			# Read through each line of the file in turn
-			for line in word_file:
-
-				if block_line_i == -1 or block_line_i == lines_per_block:
-					# If we most recently read something which wasn't relevant, we're ready to look for a new frame-index match
-					# Alternatively, we just read the last line of a frame activation list, and are ready to look for another first line.
-
-					frame_ident_line_match = frame_ident_line_re.match(line)
-					if frame_ident_line_match:
-
-						# Extract the list of activations
-						activations_this_line = [ float (i)
-						                          for i
-						                          in frame_ident_line_match.group("activation_list_1").strip().split() ]
-
-						frame_activations = activations_this_line.copy()
-
-						# Change the state to match what we've just read
-						# In this case, line 1 (which is special)
-						block_line_i = 1
-
-					# Otherwise we go on to read the next line
-
-				else:
-					# We're expect to read 10 more activations
-
-					# Read them in
-					activations_this_line = [ float (i)
-					                          for i
-					                          in line.strip().split() ]
-
-					# Add them to the current activations for this line
-					frame_activations.extend(activations_this_line.copy())
-
-					# Change the state to match the fact that we've read an extra line.
-					block_line_i += 1
-
-					if block_line_i == lines_per_block:
-						# If we've just read the last line in a block, we need to save out the data
-						word_activations.append(frame_activations)
-
+		# htk 0-indexed
+		min_max = min(min_max, last_frame)
 
 		# Now save this word's activations list into a dictionary keyed on that word
-		activations[word] = word_activations.copy()
+		activations[word] = word_activations
 
-	return activations
+	return activations, min_max
 
 
-def save_activations(activations, output_dir_path, layer_name):
-	"""
-	Saves mat files for the activations
-	:param activations:
-	:param output_dir_path:
-	:param layer_name:
-	"""
-	for word in activations.keys():
-		# Convert data into numpy array
-		activations[word] = numpy.array(activations[word])
+def extract_activations_from_line(activation_line):
+	activations = activation_line.strip().split()
+	return [float(activation) for activation in activations]
 
-	# Save
-	scipy.io.savemat(
-		os.path.join(output_dir_path, "{0}_activations".format(layer_name)),
-		activations,
-		appendmat = True)
+
+def single_word_activations(word_file_path, lines_per_block):
+
+	# Regular expression for frame and list of node activations
+	frame_ident_line_re = re.compile(
+			r"^"
+			# The frame number
+			r"(?P<frame_id>[0-9]+)"
+			r":"
+			# The list of activation values
+			r"(?P<activation_list>(?:\s+[0-9\-\.]+)+)"
+			r"$")
+	tail_line_re = re.compile(
+		r"^"
+		r"(?P<activation_list>[0-9\s\.\-]+)"
+		r"$")
+
+	# 0 expect to read first (frame ident) line
+	# 1 expect to read second line
+	# ...
+	STATE = 0
+
+	# htk 0-indexed
+	current_frame = -1
+	activation_collection = []
+	all_activations = dict()
+
+	with open(word_file_path, 'r', encoding='utf-8') as word_file:
+
+		# Read through each line of the file in turn
+		for line in word_file:
+
+			if STATE is 0:
+				frame_ident_line_match = frame_ident_line_re.match(line)
+				if frame_ident_line_match:
+					# read ident line
+					current_frame = frame_ident_line_match.group('frame_id')
+					activation_collection.extend(
+						extract_activations_from_line(frame_ident_line_match.group('activation_list')))
+
+					# adjust state
+					STATE += 1
+				else:
+					continue
+
+			elif STATE in range(1, lines_per_block):
+				tail_line_match = tail_line_re.match(line)
+				if tail_line_match:
+					# read data
+					these_activations = extract_activations_from_line(tail_line_match.group('activation_list'))
+					activation_collection.extend(these_activations)
+
+					# deal with and reset collection if on final line of block
+					if STATE is lines_per_block-1:
+						all_activations[current_frame] = activation_collection
+						activation_collection = []
+
+					# adjust state
+					if STATE in range(1, lines_per_block-1):
+						STATE += 1
+					elif STATE is lines_per_block-1:
+						STATE = 0
+					else:
+						# bad state
+						raise()
+				else:
+					# we really expected to see a readable line yere
+					raise()
+			else:
+				# state exceeds block size
+				raise()
+
+	return all_activations, int(current_frame)
+
+
+def save_activations(activations, word_list, earliest_final_frame, output_dir_path, layer_name):
+
+	for frame_i in range(0, earliest_final_frame):
+
+		frame_dict = dict()
+
+		for word in word_list:
+			frame_dict[word] = activations[word]['{0}'.format(frame_i)]
+
+		scipy.io.savemat(
+			os.path.join(output_dir_path, "{0}_activations_frame{1:02d}".format(layer_name, frame_i)),
+			frame_dict,
+			appendmat = True)
+
+
+def comma_separate_list(activation_list):
+	return ','.join([str(activation) for activation in activation_list])
+
+
+def transform_to_flat_files(activations, word_list, earliest_final_frame, output_path, layer_name):
+	for word in word_list:
+		file_name = os.path.join(output_path, '{0}_activations_{1}.csv'.format(layer_name, word))
+		with open(file_name, mode='w', encoding='utf-8') as word_file:
+			for frame_i in range(0, earliest_final_frame):
+				activations_this_frame = activations[word]['{0}'.format(frame_i)]
+				word_file.write('{0}\n'.format(comma_separate_list(activations_this_frame)))
 
 
 def main():
@@ -169,15 +167,17 @@ def main():
 
 	# Define some paths
 	input_path      = os.path.join('/Users', 'cai', 'Desktop', 'ece_scratch', 'htk_out', 'ece_{0}_log'.format(layer_name))
-	output_path     = os.path.join('/Users', 'cai', 'Desktop', 'ece_scratch', 'py_out')
+	output_path     = os.path.join('/Users', 'cai', 'Desktop', 'ece_scratch', 'py_out', 'ece_dnn_activations')
 
 	# Get the words from the words file
-	word_list = get_word_list_from_file_list(input_path, 'mlp.txt')
+	suffix = 'mlp.txt'
+	word_list = get_word_list_from_file_list(input_path, suffix)
 
-	activations = get_activation_lists(input_path, word_list, lines_per_block)
+	activations, earliest_final_frame = get_activation_lists(input_path, word_list, lines_per_block, suffix)
 
-	save_activations(activations, output_path, layer_name)
+	save_activations(activations, word_list, earliest_final_frame, output_path, layer_name)
 
+	transform_to_flat_files(activations, word_list, earliest_final_frame, output_path, layer_name)
 
 
 # Boilerplate

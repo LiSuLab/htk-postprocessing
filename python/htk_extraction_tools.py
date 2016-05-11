@@ -2,6 +2,7 @@
 """
 Some common tools for extracting data from HTK's output.
 """
+import glob
 from cw_common import *
 
 
