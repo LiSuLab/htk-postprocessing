@@ -1,4 +1,4 @@
-function [] = scr_mds_HL_phones()
+function [cf_features] = scr_layers_vs_features()
 
     %% Paths
 
@@ -11,13 +11,13 @@ function [] = scr_mds_HL_phones()
     phone_segmentations = orderfields(phone_segmentations);
     
     layers = { ...
-        'FBK', ...
         '2', ...
         '3', ...
         '4', ...
         '5', ...
         '6', ...
-        '7BN'};
+        '7BN'};%, ...
+        %'FBK'};
     n_layers = numel(layers);
     
     %% Constants
@@ -30,6 +30,10 @@ function [] = scr_mds_HL_phones()
 
     framestep_ms = 10;
     framewidth_ms = 25;
+    
+    feature_D = shared_feature_distance_matrix(phones);
+    
+    cf_features = nan(1, n_layers);
     
     for layer_i = 1:n_layers
         
@@ -106,16 +110,12 @@ function [] = scr_mds_HL_phones()
         % Prepare structs
         phone_counts   = struct();
         phone_averages = struct();
-        phone_stds     = struct();
-        phone_sems     = struct();
 
         for phone_i = 1:n_phones
             phone = phones{phone_i};
 
             phone_counts.(phone)   = size(activations_per_phone.(phone), 1);
             phone_averages.(phone) = mean(activations_per_phone.(phone), 1);
-            phone_stds.(phone)     = std(activations_per_phone.(phone),  1);
-            phone_sems.(phone) = phone_stds.(phone) / sqrt(phone_counts.(phone));
 
         end
 
@@ -127,34 +127,87 @@ function [] = scr_mds_HL_phones()
            phone = phones{phone_i};
            phone_activations(phone_i, :) = phone_averages.(phone);
         end
-        
-        figure_title = sprintf('MDS for layer %s', layer);
-        
-        figure;
 
         D = pdist(phone_activations, 'correlation');
-
-        if layer_i == 1
-            % First time random initial positions
-            prev_mds_position = 'random';
-        end
         
-        [Y] = mdscale(D, 2, ...
-            'Criterion', 'sammon', ...
-            'Start', prev_mds_position);
-        
-        % Reuse previous position next time
-        prev_mds_position = Y;
-
-        plot(Y(:,1),Y(:,2), '.', 'Marker','none');
-        text(Y(:,1),Y(:,2), phones, 'Color','b', ...
-            'FontSize',12,'FontWeight','bold', 'HorizontalAlignment','center');
-        h_gca = gca;
-        h_gca.XTickLabel = [];
-        h_gca.YTickLabel = [];
-        
-        title(figure_title);
+        cf_features(layer_i) = corr(D', feature_D', 'type', 'Spearman');
 
     end
     
 end%function
+
+%%
+
+function D = shared_feature_distance_matrix(phones)
+    
+    features = local_phonetic_feature_matrix();
+    n_features = numel(features.(phones{1}));
+    
+    n_phones = numel(phones);
+    
+    phones_data = nan(n_phones, n_features);
+    for phone_i = 1:n_phones
+       phones_data(phone_i, :) = features.(phones{phone_i}); 
+    end
+    
+    D = pdist(phones_data, 'euclidean');
+
+end
+
+%%
+
+function D = triphone_phone_distance_matrix(phones)
+
+    
+
+end
+
+%%
+
+function features = local_phonetic_feature_matrix()
+
+    features.aa	= [1 1 1 0  0 0 0  0 0 0 0 0 0  0 0 1  0 0 0 1  0];
+    features.ae	= [1 1 1 0  0 0 0  0 0 0 0 0 0  1 0 0  0 0 1 0  0];
+    features.ah	= [1 1 1 0  0 0 0  0 0 0 0 0 0  0 0 1  0 0 1 0  0];
+    features.ao	= [1 1 1 0  0 0 0  0 0 0 0 0 0  0 0 1  0 0 1 0  1];
+    features.aw	= [1 1 1 0  0 0 0  0 0 0 0 0 0  0 1 1  0 1 0 1  1];
+    features.ay	= [1 1 1 0  0 0 0  0 0 0 0 0 0  1 1 0  1 0 0 1  0];
+    features.b	= [0 1 0 1  1 0 0  1 0 0 0 0 0  0 0 0  0 0 0 0  0];
+    features.ch	= [0 0 0 1  0 1 0  0 1 0 1 0 0  0 0 0  0 0 0 0  0];
+    features.d	= [0 1 0 1  0 1 0  1 0 0 0 0 0  0 0 0  0 0 0 0  0];
+    features.ea	= [1 1 1 0  0 0 0  0 0 0 0 0 0  1 1 0  0 0 1 0  0];
+    features.eh	= [1 1 1 0  0 0 0  0 0 0 0 0 0  1 0 0  0 0 1 0  0];
+    features.er	= [1 1 1 0  0 0 0  0 0 0 0 0 0  0 1 0  0 0 1 0  0];
+    features.ey	= [1 1 1 0  0 0 0  0 0 0 0 0 0  1 0 0  0 1 1 0  0];
+    features.f	= [0 0 0 1  1 0 0  0 0 1 0 0 0  0 0 0  0 0 0 0  0];
+    features.g	= [0 1 0 1  0 0 1  1 0 0 0 0 0  0 0 0  0 0 0 0  0];
+    features.hh	= [0 0 0 1  0 0 0  0 0 1 0 1 0  0 0 0  0 0 0 0  0];
+    features.ia	= [1 1 1 0  0 0 0  0 0 0 0 0 0  1 1 0  1 1 0 0  0];
+    features.ih	= [1 1 1 0  0 0 0  0 0 0 0 0 0  1 0 0  1 0 0 0  0];
+    features.iy	= [1 1 1 0  0 0 0  0 0 0 0 0 0  1 0 0  1 0 0 0  0];
+    features.jh	= [0 1 0 1  0 1 0  0 1 0 1 0 0  0 0 0  0 0 0 0  0];
+    features.k	= [0 0 0 1  0 0 1  1 0 0 0 0 0  0 0 0  0 0 0 0  0];
+    features.l	= [1 1 0 1  0 1 0  0 0 0 0 1 0  0 0 0  0 0 0 0  0];
+    features.m	= [1 1 0 1  1 0 0  0 0 0 0 0 1  0 0 0  0 0 0 0  0];
+    features.n	= [1 1 0 1  0 1 0  0 0 0 0 0 1  0 0 0  0 0 0 0  0];
+    features.ng	= [1 1 0 1  0 0 1  0 0 0 0 0 1  0 0 0  0 0 0 0  0];
+    features.oh	= [1 1 1 0  0 0 0  0 0 0 0 0 0  0 0 1  0 0 0 1  1];
+    features.ow	= [1 1 1 0  0 0 0  0 0 0 0 0 0  0 1 1  0 1 1 0  1];
+    features.oy	= [1 1 1 0  0 0 0  0 0 0 0 0 0  0 1 1  0 1 1 0  1];
+    features.p	= [0 0 0 1  1 0 0  1 0 0 0 0 0  0 0 0  0 0 0 0  0];
+    features.r	= [1 1 0 1  0 1 0  0 0 0 0 1 0  0 0 0  0 0 0 0  0];
+    features.s	= [0 0 0 1  0 1 0  0 0 1 1 0 0  0 0 0  0 0 0 0  0];
+    features.sh	= [0 0 0 1  0 1 0  0 0 1 1 0 0  0 0 0  0 0 0 0  0];
+    features.t	= [0 0 0 1  0 1 0  1 0 0 0 0 0  0 0 0  0 0 0 0  0];
+    features.th	= [0 0 0 1  0 1 0  0 0 1 0 0 0  0 0 0  0 0 0 0  0];
+    features.ua	= [1 1 1 0  0 0 0  0 0 0 0 0 0  0 1 1  0 1 0 0  1];
+    features.uh	= [1 1 1 0  0 0 0  0 0 0 0 0 0  0 0 1  1 0 0 0  1];
+    features.uw	= [1 1 1 0  0 0 0  0 0 0 0 0 0  0 0 1  1 0 0 0  1];
+    features.v	= [0 1 0 1  1 0 0  0 0 1 0 0 0  0 0 0  0 0 0 0  0];
+    features.w	= [1 1 0 0  1 0 1  0 0 0 0 1 0  0 0 1  1 0 0 0  1];
+    features.y	= [1 1 0 0  0 1 0  0 0 0 0 1 0  1 0 0  1 0 0 0  0];
+    features.z	= [0 1 0 1  0 1 0  0 0 1 1 0 0  0 0 0  0 0 0 0  0];
+
+end
+
+
