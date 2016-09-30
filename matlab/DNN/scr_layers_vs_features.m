@@ -156,7 +156,104 @@ end
 
 %%
 
-function D = triphone_phone_distance_matrix(phones)
+function D = fbk_phone_distance_matrix(words, phones)
+
+    layer_activations = load(fullfile(load_dir, 'hidden_layer_FBK_activations.mat'));
+    layer_activations = orderfields(layer_activations);
+
+    n_nodes = size(layer_activations.(words{1}), 2);
+
+
+    %% Initialise
+
+    activations_per_phone = struct();
+    for phone_i = 1:n_phones
+        phone = phones{phone_i};
+        activations_per_phone.(phone) = [];
+    end
+
+
+    %% The loop
+
+    % We want to average together the BN nodes at every occurence of each
+    % phone.
+    %
+    % We will create a phone-indexed struct of activations
+
+    for word_i = 1:n_words
+        word = words{word_i};
+
+        this_word_segmentation = phone_segmentations.(word);
+
+        n_segments_this_word = size(this_word_segmentation, 2);
+
+        for segment_i = 1:n_segments_this_word
+
+            %% Get the segment of this word
+
+            this_segment_phone = this_word_segmentation(segment_i).label;
+
+            if strcmpi(this_segment_phone, 'sil')
+                continue;
+            end
+
+
+            %% Get frames in this segment
+
+            segment_ms = double([ ...
+                this_word_segmentation(segment_i).onset, ...
+                this_word_segmentation(segment_i).offset]) ...
+                / 10000;
+
+            % The first frame starts at 0, and move in framestep_ms jumps,
+            % so we can use floor to find the index of the frame which
+            % contans the onset and offset of the segment.
+            first_frame_i_in_segment = floor(segment_ms(1) / framestep_ms);
+            last_frame_i_in_segment = floor(segment_ms(2) / framestep_ms);
+
+            segment_frames = (first_frame_i_in_segment:last_frame_i_in_segment);
+
+            % +1 here because we're changing the frame_is (which are
+            % 0-indexed) into matlab 1-indexed frame indices
+            for segment_frame = segment_frames + 1
+                activations_per_phone.(this_segment_phone) = [ ...
+                    activations_per_phone.(this_segment_phone); ...
+                    layer_activations.(word)(segment_frame, :)];     
+            end
+        end
+    end
+
+
+    %% Average over phones
+
+    % Prepare structs
+    phone_counts   = struct();
+    phone_averages = struct();
+
+    for phone_i = 1:n_phones
+        phone = phones{phone_i};
+
+        phone_counts.(phone)   = size(activations_per_phone.(phone), 1);
+        phone_averages.(phone) = mean(activations_per_phone.(phone), 1);
+
+    end
+
+    %% MDS
+
+    % Stack struct into matrix
+    phone_activations = nan(n_phones, n_nodes);
+    for phone_i = 1:n_phones
+       phone = phones{phone_i};
+       phone_activations(phone_i, :) = phone_averages.(phone);
+    end
+
+    D = pdist(phone_activations, 'correlation');
+
+end
+
+%%
+
+function D = triphone_distance_matrix(phones)
 
     
 

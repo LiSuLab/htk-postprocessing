@@ -17,7 +17,8 @@ function [] = scr_mds_HL_phones()
         '4', ...
         '5', ...
         '6', ...
-        '7BN'};
+        '7BN', ...
+        };
     n_layers = numel(layers);
     
     %% Constants
@@ -39,6 +40,8 @@ function [] = scr_mds_HL_phones()
         layer_activations = orderfields(layer_activations);
 
         n_nodes = size(layer_activations.(words{1}), 2);
+        
+        rsa.util.prints('Layer %s', layer);
 
 
         %% Initialise
@@ -128,23 +131,40 @@ function [] = scr_mds_HL_phones()
            phone_activations(phone_i, :) = phone_averages.(phone);
         end
         
-        figure_title = sprintf('MDS for layer %s', layer);
-        
         figure;
+        
+        % 1 = sammon
+        % 2 = t-sne
+        kind = 2;
+        
+        if kind == 1
 
-        D = pdist(phone_activations, 'correlation');
+            D = pdist(phone_activations, 'correlation');
+        
+            figure_title = sprintf('Sammon MDS for layer %s', layer);
 
-        if layer_i == 1
-            % First time random initial positions
-            prev_mds_position = 'random';
+            if layer_i == 1
+                % First time random initial positions
+                prev_mds_position = 'random';
+            end
+
+            [Y] = mdscale(D, 2, ...
+                'Criterion', 'sammon', ...
+                'Start', prev_mds_position);
+
+            % Reuse previous position next time
+            prev_mds_position = Y;
+            
+        elseif kind == 2
+        
+            figure_title = sprintf('t-SNE for layer %s', layer);
+            
+            labels = [];
+            no_dims = 2;
+            init_dims = 25;
+            Y = tsne(phone_activations, labels, no_dims, init_dims);
+            
         end
-        
-        [Y] = mdscale(D, 2, ...
-            'Criterion', 'sammon', ...
-            'Start', prev_mds_position);
-        
-        % Reuse previous position next time
-        prev_mds_position = Y;
 
         plot(Y(:,1),Y(:,2), '.', 'Marker','none');
         text(Y(:,1),Y(:,2), phones, 'Color','b', ...
@@ -154,6 +174,20 @@ function [] = scr_mds_HL_phones()
         h_gca.YTickLabel = [];
         
         title(figure_title);
+        
+        
+%         %% Dendrogram
+%         
+%         figure;
+%         
+%         tree = linkage(D, 'single');
+%         leaf_order = optimalleaforder(tree, D);
+%         
+%         dendrogram( ...
+%             tree, n_phones, ...
+%             ...%'Reorder', leaf_order, ...
+%             'Labels', phones);
+        
 
     end
     
