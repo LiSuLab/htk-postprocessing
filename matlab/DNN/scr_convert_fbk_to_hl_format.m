@@ -8,18 +8,20 @@ function [] = scr_convert_fbk_to_hl_format()
 
     all_data = struct();
 
-    for frame = 0:37
+    for frame = 0:84
         
-       frame_data_file = sprintf('~/Desktop/scratch/py_out/filterbank/fbanks_frame%02d.mat', frame);
+       frame_data_file = sprintf('~/Desktop/scratch/py_out/filterbank/fbanks_all_frame%02d.mat', frame);
        frame_data = load(frame_data_file);
+       frame_data = orderfields(frame_data);
        
        for word_i = 1:n_words
            word = words{word_i};
            
-           if frame == 0
+           if (frame == 0)
                % First time
                all_data.(word) = frame_data.(word);
-           else
+           elseif (isfield(frame_data, word))
+               % Make sure this word hasn't ended
                all_data.(word) = [ all_data.(word); frame_data.(word) ];
            end
        end
