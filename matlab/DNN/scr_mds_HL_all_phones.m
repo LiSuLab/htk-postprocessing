@@ -10,7 +10,7 @@ function [] = scr_mds_HL_all_phones()
     %% Paths
 
     load_dir  = fullfile('/Users', 'cai', 'Desktop', 'scratch', 'py_out');
-    save_dir = fullfile('/Users', 'cai', 'Desktop', 'temp');
+    save_dir = fullfile('/Users', 'cai', 'Desktop', 't-sne');
     
     
     %% Load segmentation data
@@ -31,7 +31,7 @@ function [] = scr_mds_HL_all_phones()
         '4', ...
         '5', ...
         '6', ...
-        '7BN', ...
+        '7BN' ...
         };
     n_layers = numel(layers);
     
@@ -105,11 +105,11 @@ function [] = scr_mds_HL_all_phones()
 
             elseif kind == 2
                 
-                lab = [];
                 no_dims = 2;
                 init_dims = 25;
+                perplexity = 40;
 
-                Y = fast_tsne(activations, lab, no_dims, init_dims);
+                Y = fast_tsne(activations, no_dims, init_dims, perplexity);
 
                 % Save Y
                 save(Y_path, 'Y', '-v7.3')
@@ -188,33 +188,33 @@ function [] = scr_mds_HL_all_phones()
         
         
         %% Per phone
-        PHONES = fieldnames(label_index_dictionary());
-        n_phones = numel(PHONES);
-        
-        for phone_i = 1:n_phones
-            phone = PHONES{phone_i};
-           
-            f = figure;
-            
-            point_select = select_points_by_phone(labels, phone);
-            
-            scatter(Y(point_select,1),Y(point_select,2), area, 'filled');
-            
-            % Set ais limits for coregistration
-            xlim(x_limits);
-            ylim(y_limits);
-            
-            feature_title = sprintf('%s (phone %s)', figure_title, phone);
-            title(feature_title);
-            
-            % save fig
-            fig_path = fullfile(save_dir, rsa.util.spacesToUnderscores(feature_title));
-            saveas(f, fig_path, 'epsc');
-            
-            close(f);
-            
-        end
-    end
+%         PHONES = fieldnames(label_index_dictionary());
+%         n_phones = numel(PHONES);
+%         
+%         for phone_i = 1:n_phones
+%             phone = PHONES{phone_i};
+%            
+%             f = figure;
+%             
+%             point_select = select_points_by_phone(labels, phone);
+%             
+%             scatter(Y(point_select,1),Y(point_select,2), area, 'filled');
+%             
+%             % Set ais limits for coregistration
+%             xlim(x_limits);
+%             ylim(y_limits);
+%             
+%             feature_title = sprintf('%s (phone %s)', figure_title, phone);
+%             title(feature_title);
+%             
+%             % save fig
+%             fig_path = fullfile(save_dir, rsa.util.spacesToUnderscores(feature_title));
+%             saveas(f, fig_path, 'epsc');
+%             
+%             close(f);
+%             
+%         end
+    end%for:layers
     
 end%function
 
