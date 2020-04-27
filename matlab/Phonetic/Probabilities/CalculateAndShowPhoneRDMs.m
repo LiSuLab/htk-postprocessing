@@ -4,9 +4,9 @@ close all;
 %% Paths
 
 % Change these values
-input_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd_likelihood', 'phones_data');
-output_dir = fullfile('/Users', 'cai', 'Desktop', 'cwd_likelihood', 'models');
-toolbox_path = '/Volumes/Cai''s MBP HDD/Documents/Code/Neurolex/rsatoolbox-rsagroup';
+input_dir = fullfile('/Users', 'cai', 'Desktop', 'Scratch', 'cwd_likelihood', 'phones_data');
+output_dir = fullfile('/Users', 'cai', 'Desktop', 'Scratch', 'cwd_likelihood', 'models');
+toolbox_path = '/Volumes/CaiHD/Documents/Code/Neurolex/rsatoolbox-rsagroup';
 
 chdir(output_dir)
 
