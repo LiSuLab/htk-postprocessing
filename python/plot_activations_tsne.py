@@ -35,6 +35,7 @@ PERPLEXITY = 40
 
 
 def main():
+    """The script."""
 
     phone_segmentations = PhoneSegmentationSet.load()
 
@@ -55,6 +56,7 @@ def main():
 def plot_tsne(activations_per_point: array,
               phone_labels_per_point: List[PhoneSegment.Label],
               figure_name: str):
+    """Generate and plot t-SNE"""
     t_sne_positions_path = Path(SAVE_DIR, f"t-sne positions {figure_name}.npz")
     if t_sne_positions_path.exists():
         t_sne_positions = np_load(t_sne_positions_path)
@@ -74,11 +76,17 @@ def plot_tsne(activations_per_point: array,
     pyplot.savefig(Path(SAVE_DIR, f"{figure_name}.png"))
 
 
-def compute_tsne_positions(activations_per_point):
+def compute_tsne_positions(activations_per_point: array) -> array:
+    """
+    Computes t-SNE positions from a dataset.
+
+    `activations_per_point`: n_obvs x n_dims
+    """
     print(f"TSNE from data of size {activations_per_point.shape}")
     t_sne_positions = TSNE(
-        n_components=2,
+        n_components=2,  # 2D
         perplexity=PERPLEXITY,
+        # Recommended args
         n_iter=1_000,
         learning_rate=200,
         method="barnes_hut",
@@ -91,10 +99,14 @@ def stack_data_for_layer(layer, phone_segmentations) -> Tuple[
     array, List[PhoneSegment.Label],
     Dict[PhoneSegment.Label, array]
 ]:
-    """Load data for the specified layer, and distribute it in various ways."""
+    """
+    Load data for the specified layer, and distribute it in various ways.
 
-    # word -> (time x node) ndarrray
-    layer_activations = load_activations(Path(LOAD_DIR, f"hidden_layer_{layer.name}_activations.mat"))
+    (I returning values like this isn't the best idea, but it'll work for now.)
+    """
+
+    # word -> (time x node) arrray
+    layer_activations = load_matlab_file(Path(LOAD_DIR, f"hidden_layer_{layer.name}_activations.mat"))
 
     # frame x node
     activations_per_frame = []
@@ -137,23 +149,26 @@ def stack_data_for_layer(layer, phone_segmentations) -> Tuple[
     )
 
 
-def load_activations(path: Path):
+def load_matlab_file(path: Path):
+    """Load a layer's activations from a Matlab file"""
     try:
         # this works
         # noinspection PyTypeChecker
         activations = scipy.io.loadmat(path)
     except NotImplementedError:
+        # scipy can't load matlab v7.3 files, so we use a different library
         activations = mat73.loadmat(path)
     return activations
 
 
 class PhoneSegmentationSet:
+    """Represents a full collection of phonetic segmentations for a list of words."""
     def __init__(self, from_dict: Dict):
         # Extract relevant data from Matlab dict
         self._segmentation: Dict[str, PhoneSegmentation] = {
             word: [
-                PhoneSegment(onset=seg[0][0][0],
-                             offset=seg[1][0][0],
+                PhoneSegment(onset_sample=seg[0][0][0],
+                             offset_sample=seg[1][0][0],
                              label=PhoneSegment.Label.from_name(seg[2][0]))
                 for seg in from_dict[word][0]
             ]
@@ -177,28 +192,26 @@ class PhoneSegmentationSet:
 
 
 class PhoneSegment:
+    """Represents a segment of input, with a phone label."""
 
-    frame_step_ms = 10
-    frame_width_ms = 25
+    _samples_per_frame = 100_000
 
-    samples_per_frame = 100_000
-
-    def __init__(self, onset: int, offset: int, label: PhoneSegment.Label):
+    def __init__(self, onset_sample: int, offset_sample: int, label: PhoneSegment.Label):
         self.label: PhoneSegment.Label = label
 
         # samples
-        self.onset_sample: int = onset
-        self.offset_sample: int = offset
+        self.onset_sample: int = onset_sample
+        self.offset_sample: int = offset_sample
 
         # frames
-        self.onset_frame: int = int(self.onset_sample / self.samples_per_frame)
-        self.offset_frame: int = int(self.offset_sample / self.samples_per_frame)
-
+        self.onset_frame: int = int(self.onset_sample / self._samples_per_frame)
+        self.offset_frame: int = int(self.offset_sample / self._samples_per_frame)
 
     def __repr__(self):
         return f"PhoneSegment(onset_frame={self.onset_frame}, offset_frame={self.offset_frame}, label={self.label})"
 
     class Label(Enum):
+        """Represents the different phone labels"""
         sil = 0
         aa  = 1
         ae  = 2
@@ -254,6 +267,7 @@ PhoneSegmentation = List[PhoneSegment]
 
 
 class DNNLayer(Enum):
+    """Represents the different layers of the DNN"""
     L1_filterbank = 1
     L2            = 2
     L3            = 3
