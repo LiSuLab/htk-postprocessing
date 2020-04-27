@@ -1,5 +1,6 @@
 mat73
 matplotlib
 numpy
+pandas
 scipy
 sklearn
