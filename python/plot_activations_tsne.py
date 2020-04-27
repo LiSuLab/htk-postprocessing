@@ -21,7 +21,7 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Dict, List, DefaultDict, Tuple
 
-from numpy import array, mean, load as np_load, savez as np_save
+from numpy import array, mean, load as np_load, save as np_save
 import scipy.io
 import mat73
 from sklearn.manifold import TSNE
@@ -50,48 +50,69 @@ def run_tsne_script():
             activations_per_phone
         ) = stack_data_for_layer(layer, phone_segmentations)
 
-        plot_tsne(activations_per_word_phone, labels_per_word_phone, f"{layer.name} word phone tsne")
-        plot_tsne(activations_per_frame, labels_per_frame, f"{layer.name} frame tsne")
+        t_sne_word_phone = compute_tsne_positions(activations_per_word_phone, f"{layer.name} word phone")
+        t_sne_frame = compute_tsne_positions(activations_per_frame, f"{layer.name} frame")
+
+        # labelled by phones
+        plot_tsne(t_sne_word_phone,
+                  [(phone.value, phone.name) for phone in labels_per_word_phone],
+                  f"{layer.name} word phone tsne phone-label")
+        plot_tsne(t_sne_frame,
+                  [(l.value, l.name) for l in labels_per_frame],
+                  f"{layer.name} frame tsne phone-label")
+
+        # labelled by features
+        for feature in Feature:
+            plot_tsne(t_sne_word_phone,
+                      [(1 if phone in feature.phones else 0, "")
+                       for phone in labels_per_word_phone],
+                      f"{layer.name} word phone tsne feature-{feature.name}")
 
 
-def plot_tsne(activations_per_point: array,
-              phone_labels_per_point: List[Phone],
+def plot_tsne(t_sne_positions: array,
+              phone_labels_per_point: List[Tuple[int, str]],
               figure_name: str):
-    """Generate and plot t-SNE"""
-    t_sne_positions_path = Path(SAVE_DIR, f"t-sne positions {figure_name}.npz")
-    if t_sne_positions_path.exists():
-        t_sne_positions = np_load(t_sne_positions_path)
-    else:
-        t_sne_positions = compute_tsne_positions(activations_per_point)
-        np_save(t_sne_positions_path, t_sne_positions_path)
+    """
+    Generate and plot t-SNE.
 
-    pyplot.figure(figsize=(16, 10))
+   `phone_labels_per_point`: An ordred list, for each point: a tuple of a label id and label tag.
+                             Used for colouring points
+    """
+    pyplot.figure(figsize=(16, 16))
     pyplot.scatter(
         x=t_sne_positions[:, 0],
         y=t_sne_positions[:, 1],
-        c=array([label.value for label in phone_labels_per_point]),
+        c=array([i for i, label in phone_labels_per_point]),
         cmap='gist_rainbow',
         alpha=0.5,
     )
     pyplot.title(f"{figure_name}")
-    pyplot.savefig(Path(SAVE_DIR, f"{figure_name}.png"))
+    pyplot.savefig(Path(SAVE_DIR, "figures", f"{figure_name}.png"))
 
 
-def compute_tsne_positions(activations_per_point: array) -> array:
+def compute_tsne_positions(activations_per_point: array, name: str) -> array:
     """
     Computes t-SNE positions from a dataset.
 
     `activations_per_point`: n_obvs x n_dims
     """
     print(f"TSNE from data of size {activations_per_point.shape}")
-    t_sne_positions = TSNE(
-        n_components=2,  # 2D
-        perplexity=PERPLEXITY,
-        # Recommended args
-        n_iter=1_000,
-        learning_rate=200,
-        method="barnes_hut",
-    ).fit_transform(activations_per_point)
+
+    t_sne_positions_path = Path(SAVE_DIR, f"t-sne positions {name}.npy")
+    if t_sne_positions_path.exists():
+        print("Loading...")
+        t_sne_positions = np_load(t_sne_positions_path)
+    else:
+        print("Computing...")
+        t_sne_positions = TSNE(
+            n_components=2,  # 2D
+            perplexity=PERPLEXITY,
+            # Recommended args
+            n_iter=1_000,
+            learning_rate=200,
+            method="barnes_hut",
+        ).fit_transform(activations_per_point)
+        np_save(t_sne_positions_path, t_sne_positions)
     return t_sne_positions
 
 
