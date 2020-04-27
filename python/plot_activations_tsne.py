@@ -36,15 +36,13 @@ logger = getLogger(__name__)
 LOAD_DIR = Path("/Users/cai/Dox/Academic/Analyses/Lexpro/DNN mapping/scratch/py_out")
 SAVE_DIR = Path("/Users/cai/Dox/Academic/Analyses/Lexpro/DNN mapping/t-sne/new t-sne")
 
-PERPLEXITY = 40
-
 
 def run_tsne_script():
     """The script."""
 
     phone_segmentations = PhoneSegmentationSet.load()
 
-    for layer in DNNLayer:
+    for layer in reversed(DNNLayer):  # run top-to-bottom
 
         logger.info(f"DNN layer {layer.name}")
 
@@ -54,23 +52,23 @@ def run_tsne_script():
             activations_per_phone
         ) = stack_data_for_layer(layer, phone_segmentations)
 
-        t_sne_word_phone = compute_tsne_positions(activations_per_word_phone, f"{layer.name} word phone")
-        t_sne_frame = compute_tsne_positions(activations_per_frame, f"{layer.name} frame")
+        t_sne_frame = compute_tsne_positions(activations_per_frame, name=f"{layer.name} frame", perplexity=40)
+        t_sne_word_phone = compute_tsne_positions(activations_per_word_phone, name=f"{layer.name} word–phone", perplexity=30)
 
         # labelled by phones
         plot_tsne(t_sne_word_phone,
                   [(phone.value, phone.name) for phone in labels_per_word_phone],
-                  f"{layer.name} word phone tsne phone-label")
+                  f"t-SNE layer {layer.name} word–phone phone-label")
         plot_tsne(t_sne_frame,
                   [(l.value, l.name) for l in labels_per_frame],
-                  f"{layer.name} frame tsne phone-label")
+                  f"t-SNE layer {layer.name} frame phone-label")
 
         # labelled by features
         for feature in Feature:
             plot_tsne(t_sne_word_phone,
                       [(1 if phone in feature.phones else 0, "")
                        for phone in labels_per_word_phone],
-                      f"{layer.name} word phone tsne feature-{feature.name}")
+                      f"t-SNE layer {layer.name} feature-{feature.name}")
 
 
 def plot_tsne(t_sne_positions: array,
@@ -87,14 +85,15 @@ def plot_tsne(t_sne_positions: array,
         x=t_sne_positions[:, 0],
         y=t_sne_positions[:, 1],
         c=array([i for i, label in phone_labels_per_point]),
-        cmap='gist_rainbow',
+        cmap='rainbow',
         alpha=0.5,
     )
     pyplot.title(f"{figure_name}")
     pyplot.savefig(Path(SAVE_DIR, "figures", f"{figure_name}.png"))
+    pyplot.close()
 
 
-def compute_tsne_positions(activations_per_point: array, name: str) -> array:
+def compute_tsne_positions(activations_per_point: array, perplexity: int, name: str) -> array:
     """
     Computes t-SNE positions from a dataset.
 
@@ -102,7 +101,7 @@ def compute_tsne_positions(activations_per_point: array, name: str) -> array:
     """
     logger.info(f"TSNE from data of size {activations_per_point.shape}")
 
-    t_sne_positions_path = Path(SAVE_DIR, f"t-sne positions {name}.npy")
+    t_sne_positions_path = Path(SAVE_DIR, f"t-sne positions {name} perp={perplexity}.npy")
     if t_sne_positions_path.exists():
         logger.info("Loading...")
         t_sne_positions = np_load(t_sne_positions_path)
@@ -110,7 +109,7 @@ def compute_tsne_positions(activations_per_point: array, name: str) -> array:
         logger.info("Computing...")
         t_sne_positions = TSNE(
             n_components=2,  # 2D
-            perplexity=PERPLEXITY,
+            perplexity=perplexity,
             # Recommended args
             n_iter=1_000,
             learning_rate=200,
