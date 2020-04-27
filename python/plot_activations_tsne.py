@@ -16,6 +16,8 @@ caiwingfield.net
 """
 from __future__ import annotations
 
+from sys import argv
+from logging import getLogger, basicConfig, INFO
 from collections import defaultdict
 from enum import Enum, auto
 from pathlib import Path
@@ -27,6 +29,8 @@ import mat73
 from sklearn.manifold import TSNE
 from matplotlib import pyplot
 from pandas import DataFrame
+
+logger = getLogger(__name__)
 
 
 LOAD_DIR = Path("/Users/cai/Dox/Academic/Analyses/Lexpro/DNN mapping/scratch/py_out")
@@ -42,7 +46,7 @@ def run_tsne_script():
 
     for layer in DNNLayer:
 
-        print(f"DNN layer {layer.name}")
+        logger.info(f"DNN layer {layer.name}")
 
         (
             activations_per_frame, labels_per_frame,
@@ -96,14 +100,14 @@ def compute_tsne_positions(activations_per_point: array, name: str) -> array:
 
     `activations_per_point`: n_obvs x n_dims
     """
-    print(f"TSNE from data of size {activations_per_point.shape}")
+    logger.info(f"TSNE from data of size {activations_per_point.shape}")
 
     t_sne_positions_path = Path(SAVE_DIR, f"t-sne positions {name}.npy")
     if t_sne_positions_path.exists():
-        print("Loading...")
+        logger.info("Loading...")
         t_sne_positions = np_load(t_sne_positions_path)
     else:
-        print("Computing...")
+        logger.info("Computing...")
         t_sne_positions = TSNE(
             n_components=2,  # 2D
             perplexity=PERPLEXITY,
@@ -388,8 +392,12 @@ class Feature(Enum):
 
 
 def scratch():
-    print(Feature.sonorant.phones)
+    logger.info(Feature.sonorant.phones)
 
 
 if __name__ == '__main__':
+    basicConfig(format='%(asctime)s | %(levelname)s | %(module)s | %(message)s', datefmt="%Y-%m-%d %H:%M:%S",
+                level=INFO)
+    logger.info("Running %s" % " ".join(argv))
     run_tsne_script()
+    logger.info("Done!")
