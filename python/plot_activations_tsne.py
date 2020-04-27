@@ -21,7 +21,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, DefaultDict, Tuple
 
-from numpy import array, mean
+from numpy import array, mean, load as np_load, savez as np_save
 import scipy.io
 import mat73
 from sklearn.manifold import TSNE
@@ -30,6 +30,8 @@ from matplotlib import pyplot
 
 LOAD_DIR = Path("/Users/cai/Dox/Academic/Analyses/Lexpro/DNN mapping/scratch/py_out")
 SAVE_DIR = Path("/Users/cai/Dox/Academic/Analyses/Lexpro/DNN mapping/t-sne/new t-sne")
+
+PERPLEXITY = 40
 
 
 def main():
@@ -46,23 +48,42 @@ def main():
             activations_per_phone
         ) = stack_data_for_layer(layer, phone_segmentations)
 
-        t_sne_positions = TSNE(
-            n_components=2,
-            perplexity=30,
-            n_iter=1_000,
-            learning_rate=200,
-            method="barnes_hut",
-        ).fit_transform(activations_per_word_phone)
+        plot_tsne(activations_per_word_phone, labels_per_word_phone, f"{layer.name} word phone tsne")
+        plot_tsne(activations_per_frame, labels_per_frame, f"{layer.name} frame tsne")
 
-        pyplot.figure(figsize=(16, 10))
-        pyplot.scatter(
-            x=t_sne_positions[:, 0],
-            y=t_sne_positions[:, 1],
-            c=array([l.value for l in labels_per_word_phone]),
-            cmap='gist_rainbow',
-            alpha=0.5,
-        )
-        pyplot.savefig(Path(SAVE_DIR, f"{layer.name} tsne.png"))
+
+def plot_tsne(activations_per_point: array,
+              phone_labels_per_point: List[PhoneSegment.Label],
+              figure_name: str):
+    t_sne_positions_path = Path(SAVE_DIR, f"t-sne positions {figure_name}.npz")
+    if t_sne_positions_path.exists():
+        t_sne_positions = np_load(t_sne_positions_path)
+    else:
+        t_sne_positions = compute_tsne_positions(activations_per_point)
+        np_save(t_sne_positions_path, t_sne_positions_path)
+
+    pyplot.figure(figsize=(16, 10))
+    pyplot.scatter(
+        x=t_sne_positions[:, 0],
+        y=t_sne_positions[:, 1],
+        c=array([label.value for label in phone_labels_per_point]),
+        cmap='gist_rainbow',
+        alpha=0.5,
+    )
+    pyplot.title(f"{figure_name}")
+    pyplot.savefig(Path(SAVE_DIR, f"{figure_name}.png"))
+
+
+def compute_tsne_positions(activations_per_point):
+    print(f"TSNE from data of size {activations_per_point.shape}")
+    t_sne_positions = TSNE(
+        n_components=2,
+        perplexity=PERPLEXITY,
+        n_iter=1_000,
+        learning_rate=200,
+        method="barnes_hut",
+    ).fit_transform(activations_per_point)
+    return t_sne_positions
 
 
 def stack_data_for_layer(layer, phone_segmentations) -> Tuple[
@@ -118,6 +139,8 @@ def stack_data_for_layer(layer, phone_segmentations) -> Tuple[
 
 def load_activations(path: Path):
     try:
+        # this works
+        # noinspection PyTypeChecker
         activations = scipy.io.loadmat(path)
     except NotImplementedError:
         activations = mat73.loadmat(path)
@@ -176,48 +199,48 @@ class PhoneSegment:
         return f"PhoneSegment(onset_frame={self.onset_frame}, offset_frame={self.offset_frame}, label={self.label})"
 
     class Label(Enum):
-        sil = 1
-        aa = 2
-        ae = 3
-        ah = 4
-        ao = 5
-        aw = 6
-        ay = 7
-        b = 8
-        ch = 9
-        d = 10
-        ea = 11
-        eh = 12
-        er = 13
-        ey = 14
-        f = 15
-        g = 16
-        hh = 17
-        ia = 18
-        ih = 19
-        iy = 20
-        jh = 21
-        k = 22
-        l = 23
-        m = 24
-        n = 25
-        ng = 26
-        oh = 27
-        ow = 28
-        oy = 29
-        p = 30
-        r = 31
-        s = 32
-        sh = 33
-        t = 34
-        th = 35
-        ua = 36
-        uh = 37
-        uw = 38
-        v = 39
-        w = 40
-        y = 41
-        z = 42
+        sil = 0
+        aa  = 1
+        ae  = 2
+        ah  = 3
+        ao  = 4
+        aw  = 5
+        ay  = 6
+        b   = 7
+        ch  = 8
+        d   = 9
+        ea  = 10
+        eh  = 11
+        er  = 12
+        ey  = 13
+        f   = 14
+        g   = 15
+        hh  = 16
+        ia  = 17
+        ih  = 18
+        iy  = 19
+        jh  = 20
+        k   = 21
+        l   = 22
+        m   = 23
+        n   = 24
+        ng  = 25
+        oh  = 26
+        ow  = 27
+        oy  = 28
+        p   = 29
+        r   = 30
+        s   = 31
+        sh  = 32
+        t   = 33
+        th  = 34
+        ua  = 35
+        uh  = 36
+        uw  = 37
+        v   = 38
+        w   = 39
+        y   = 40
+        z   = 41
 
         @classmethod
         def from_name(cls, name: str):
