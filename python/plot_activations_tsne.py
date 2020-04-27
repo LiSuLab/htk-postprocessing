@@ -188,7 +188,7 @@ class PhoneSegmentationSet:
 
     @classmethod
     def load(cls) -> PhoneSegmentationSet:
-        return cls(scipy.io.loadmat(Path(LOAD_DIR, "triphone_boundaries.mat")))
+        return cls(load_matlab_file(Path(LOAD_DIR, "triphone_boundaries.mat")))
 
 
 class PhoneSegment:
