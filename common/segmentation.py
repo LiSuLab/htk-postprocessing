@@ -1,189 +1,12 @@
-"""
-===========================
-A port and modernisation of scr_mds_HL_all_phones.m to Python, with some extra features.
-===========================
-
-Dr. Cai Wingfield
----------------------------
-Embodied Cognition Lab
-Department of Psychology
-University of Lancaster
-c.wingfield@lancaster.ac.uk
-caiwingfield.net
----------------------------
-2020
----------------------------
-"""
 from __future__ import annotations
-
-from sys import argv
-from logging import getLogger, basicConfig, INFO
-from collections import defaultdict
 from enum import Enum, auto
 from pathlib import Path
-from typing import Dict, List, DefaultDict, Tuple
+from typing import Dict, List
 
-from numpy import array, mean, load as np_load, save as np_save
-import scipy.io
-import mat73
-from sklearn.manifold import TSNE
-from matplotlib import pyplot
 from pandas import DataFrame
 
-logger = getLogger(__name__)
-
-
-LOAD_DIR = Path("/Users/cai/Dox/Academic/Analyses/Lexpro/DNN mapping/scratch/py_out")
-SAVE_DIR = Path("/Users/cai/Dox/Academic/Analyses/Lexpro/DNN mapping/t-sne/new t-sne")
-
-
-def run_tsne_script():
-    """The script."""
-
-    phone_segmentations = PhoneSegmentationSet.load()
-
-    for layer in reversed(DNNLayer):  # run top-to-bottom
-
-        logger.info(f"DNN layer {layer.name}")
-
-        (
-            activations_per_frame, labels_per_frame,
-            activations_per_word_phone, labels_per_word_phone,
-            activations_per_phone
-        ) = stack_data_for_layer(layer, phone_segmentations)
-
-        t_sne_frame = compute_tsne_positions(activations_per_frame, name=f"{layer.name} frame", perplexity=40)
-        t_sne_word_phone = compute_tsne_positions(activations_per_word_phone, name=f"{layer.name} word–phone", perplexity=30)
-
-        # labelled by phones
-        plot_tsne(t_sne_word_phone,
-                  [(phone.value, phone.name) for phone in labels_per_word_phone],
-                  f"t-SNE layer {layer.name} word–phone phone-label")
-        plot_tsne(t_sne_frame,
-                  [(l.value, l.name) for l in labels_per_frame],
-                  f"t-SNE layer {layer.name} frame phone-label")
-
-        # labelled by features
-        for feature in Feature:
-            plot_tsne(t_sne_word_phone,
-                      [(1 if phone in feature.phones else 0, "")
-                       for phone in labels_per_word_phone],
-                      f"t-SNE layer {layer.name} feature-{feature.name}")
-
-
-def plot_tsne(t_sne_positions: array,
-              phone_labels_per_point: List[Tuple[int, str]],
-              figure_name: str):
-    """
-    Generate and plot t-SNE.
-
-   `phone_labels_per_point`: An ordred list, for each point: a tuple of a label id and label tag.
-                             Used for colouring points
-    """
-    pyplot.figure(figsize=(16, 16))
-    pyplot.scatter(
-        x=t_sne_positions[:, 0],
-        y=t_sne_positions[:, 1],
-        c=array([i for i, label in phone_labels_per_point]),
-        cmap='rainbow',
-        alpha=0.5,
-    )
-    pyplot.title(f"{figure_name}")
-    pyplot.savefig(Path(SAVE_DIR, "figures", f"{figure_name}.png"))
-    pyplot.close()
-
-
-def compute_tsne_positions(activations_per_point: array, perplexity: int, name: str) -> array:
-    """
-    Computes t-SNE positions from a dataset.
-
-    `activations_per_point`: n_obvs x n_dims
-    """
-    logger.info(f"TSNE from data of size {activations_per_point.shape}")
-
-    t_sne_positions_path = Path(SAVE_DIR, f"t-sne positions {name} perp={perplexity}.npy")
-    if t_sne_positions_path.exists():
-        logger.info("Loading...")
-        t_sne_positions = np_load(t_sne_positions_path)
-    else:
-        logger.info("Computing...")
-        t_sne_positions = TSNE(
-            n_components=2,  # 2D
-            perplexity=perplexity,
-            # Recommended args
-            n_iter=1_000,
-            learning_rate=200,
-            method="barnes_hut",
-        ).fit_transform(activations_per_point)
-        np_save(t_sne_positions_path, t_sne_positions)
-    return t_sne_positions
-
-
-def stack_data_for_layer(layer, phone_segmentations) -> Tuple[
-    array, List[Phone],
-    array, List[Phone],
-    Dict[Phone, array]
-]:
-    """
-    Load data for the specified layer, and distribute it in various ways.
-
-    (I returning values like this isn't the best idea, but it'll work for now.)
-    """
-
-    # word -> (time x node) arrray
-    layer_activations = load_matlab_file(Path(LOAD_DIR, f"hidden_layer_{layer.name}_activations.mat"))
-
-    # frame x node
-    activations_per_frame = []
-    labels_per_frame = []
-    # phone -> frame x node (to be averaged later)
-    activations_per_phone: DefaultDict[PhoneSegmentation.Label, List] = defaultdict(list)
-    # frame (mean over segments) x node
-    activations_per_word_phone = []
-    labels_per_word_phone = []
-    for word in phone_segmentations.words:
-        for segment in phone_segmentations[word]:
-            # Skip silence
-            if segment.label == Phone.sil:
-                continue
-            activations_this_segment = layer_activations[word][segment.onset_frame:segment.offset_frame, :]
-
-            # activations for each frame
-            activations_per_frame.extend(activations_this_segment.tolist())
-            labels_per_frame.extend([segment.label for _ in range(len(activations_this_segment))])
-
-            # activations for this phone
-            activations_per_phone[segment.label].extend(activations_this_segment.tolist())
-
-            # average activation for this segment of this word
-            activations_per_word_phone.append(mean(activations_this_segment, 0).tolist())
-            labels_per_word_phone.append(segment.label)
-
-    # Convert to arrays and do averaging as necessary
-    activations_per_frame: array = array(activations_per_frame)
-    activations_per_word_phone: array = array(activations_per_word_phone)
-    activations_per_phone: Dict[Phone, array] = {
-        phone: mean(activations, 0)
-        for phone, activations in activations_per_phone.items()
-    }
-
-    return (
-        activations_per_frame, labels_per_frame,
-        activations_per_word_phone, labels_per_word_phone,
-        activations_per_phone
-    )
-
-
-def load_matlab_file(path: Path):
-    """Load a layer's activations from a Matlab file"""
-    try:
-        # this works
-        # noinspection PyTypeChecker
-        activations = scipy.io.loadmat(path)
-    except NotImplementedError:
-        # scipy can't load matlab v7.3 files, so we use a different library
-        activations = mat73.loadmat(path)
-    return activations
+from .matlab_interop import load_matlab_file
+from .paths import LOAD_DIR
 
 
 class PhoneSegmentationSet:
@@ -234,29 +57,6 @@ class PhoneSegment:
 
     def __repr__(self):
         return f"PhoneSegment(onset_frame={self.onset_frame}, offset_frame={self.offset_frame}, label={self.label})"
-
-
-PhoneSegmentation = List[PhoneSegment]
-
-
-class DNNLayer(Enum):
-    """Represents the different layers of the DNN"""
-    L1_filterbank = 1
-    L2            = 2
-    L3            = 3
-    L4            = 4
-    L5            = 5
-    L6            = 6
-    L7_bottleneck = 7
-
-    @property
-    def name(self):
-        if self == DNNLayer.L1_filterbank:
-            return "FBK"
-        elif self == DNNLayer.L7_bottleneck:
-            return "7BN"
-        else:
-            return str(self.value)
 
 
 class Phone(Enum):
@@ -310,11 +110,11 @@ class Phone(Enum):
             if pl.name == name:
                 return pl
         raise ValueError(name)
-    
+
     @property
     def features(self) -> List[Feature]:
-        return [feature 
-                for feature in Feature 
+        return [feature
+                for feature in Feature
                 if self in feature.phones]
 
 
@@ -352,7 +152,7 @@ class Feature(Enum):
     def phones(self) -> List[Phone]:
         return [Phone.from_name(p)
                 for p in list(self._df[self._df[self.name] == 1].index)]
-        
+
     @classmethod
     def from_name(cls, name: str) -> Feature:
         for feature in cls:
@@ -390,13 +190,4 @@ class Feature(Enum):
         return df
 
 
-def scratch():
-    logger.info(Feature.sonorant.phones)
-
-
-if __name__ == '__main__':
-    basicConfig(format='%(asctime)s | %(levelname)s | %(module)s | %(message)s', datefmt="%Y-%m-%d %H:%M:%S",
-                level=INFO)
-    logger.info("Running %s" % " ".join(argv))
-    run_tsne_script()
-    logger.info("Done!")
+PhoneSegmentation = List[PhoneSegment]
