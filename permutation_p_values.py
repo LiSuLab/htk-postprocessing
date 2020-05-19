@@ -31,8 +31,7 @@ def main(layer: DNNLayer):
     phone_segmentations = PhoneSegmentationSet.load()
 
     # Load data in a very redundant way (but we already have code for it)
-    _, _, activations_per_word_phone, labels_per_word_phone, _ = load_and_stack_data_for_layer(layer,
-                                                                                               phone_segmentations)
+    _, _, activations_per_word_phone, labels_per_word_phone, _ = load_and_stack_data_for_layer(layer, phone_segmentations)
     observed_value = statistic_for_labelling(activations_per_word_phone, labels_per_word_phone)
 
     # using numpy for fast shuffling, so labels must be in array of ints (underlying value of Phone)
