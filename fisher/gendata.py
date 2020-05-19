@@ -25,6 +25,15 @@ def GenRandValues(ndim, mean, sdev, count):
 	return samples
 
 
+def gen_dataset(ndim, class_means, class_sdevs, class_nsamples):
+	data = []
+	labels = []
+	for class_i in range(0, len(class_means)):
+		data.extend(GenRandValues(ndim, class_means[class_i], class_sdevs[class_i], class_nsamples[class_i]))
+		labels.extend([class_i] * class_nsamples[class_i])
+	return numpy.array(data), numpy.array(labels)
+
+
 if __name__ == '__main__':
 
 	labmat = sys.argv[1]

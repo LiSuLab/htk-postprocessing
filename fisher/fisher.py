@@ -9,9 +9,11 @@ Dr. Chao Zhang
 """
 
 import sys
+from typing import List, Dict
 import numpy
 import scipy.io
 
+numpy.seterr(all='raise')
 
 # algorithm obtained from Section 4.1.6 Fisher's discriminant for multiple classes
 # from page 191 -- 193, C. Bishop, Pattern Recognition and Machine Learning
@@ -56,33 +58,49 @@ def GetVar(samples, ndim, mean):
 
 
 # to compute the Fisher criterion
-def GetFisher(dataset):
+def GetFisher(data: numpy.array, labels: List):
+	"""
+	data:
+		(samples x dims) array of observations
+	labels:
+		samples-long list of int-valued class labels
+	"""
 	# get the number of classes
-	ncls = len(dataset)
-	# get the dimension of the feature vector
-	ndim = dataset[0][0].shape[0]
+	ncls = max(labels)
+	# total number of samples and dimension of the feature vector
+	Ng, ndim = data.shape
+	# indices of items per class
+	class_indices: Dict[int, List[int]] = {
+		class_i: [
+			index
+			for index, label in enumerate(labels)
+			if label == class_i
+		]
+		for class_i in range(0, ncls)
+	}
 	# place to store the mean vector (Mk) for each class
-	Mlist = []
+	Mdict = dict()
 	# initialize global mean vector
 	Mg = numpy.zeros(ndim)
 	# initialise global within class variance matrix
 	Sw = numpy.zeros((ndim, ndim))
-	# initialize total number of samples
-	Ng = 0
 	# to compute the within class variance matrix w.r.t. each class
 	for i in range(0, ncls):
+		# skip if class is empty
+		if not class_indices[i]: continue
 		# get the number of samples of the current class
-		Nk = len(dataset[i])
-		# to get the total number of samples
-		Ng += Nk
+		Nk = len(class_indices[i])
 		# to get the mean vector of the current class
-		Mk = GetMean(dataset[i], ndim)
-		# to get the within calss variance matrix of the current class
-		Sk = GetVar(dataset[i], ndim, Mk)
+		Mk = numpy.mean(data[class_indices[i], :], axis=0)
+		# to get the within class variance matrix of the current class
+		try:
+			Sk = numpy.cov(data[class_indices[i], :].T) * (Nk - 1)
+		except FloatingPointError:
+			Sk = GetVar(data[class_indices[i], :], ndim, Mk)
 		# to update the stats for global within class variance matrix: Eqn. (4.40)
 		Sw += Sk
 		# store the mean vector of the current class
-		Mlist.append(Mk)
+		Mdict[i] = Mk
 		# to update the stats for global mean vector: Eqn. (4.44)
 		Mg += Nk * Mk
 	# to get the global mean vector: Eqn. (4.44)
@@ -90,10 +108,12 @@ def GetFisher(dataset):
 	# initailize the between class variance matrix
 	Sb = numpy.zeros((ndim, ndim))
 	for i in range(0, ncls):
+		# skip if class is empty
+		if not class_indices[i]: continue
 		# get the number of samples of the current class
-		Nk = len(dataset[i])
+		Nk = len(class_indices[i])
 		# mk - m
-		value = Mlist[i] - Mg
+		value = Mdict[i] - Mg
 		left = value.reshape(ndim, 1)
 		right = value.reshape(1, ndim)
 		# Nk * (mk - m)(mk - m)^T: Eqn. (4.46)
@@ -105,9 +125,11 @@ def GetFisher(dataset):
 	return numpy.trace(J)
 
 
-if __name__ == '__main__':
-	labmat = sys.argv[1]
-	feamat = sys.argv[2]
-
-	dataset = LoadData(labmat, feamat)
-	print(GetFisher(dataset))
+# if __name__ == '__main__':
+#
+# 	ndim = 3
+# 	class_means = [-4, -2, 0, 2, 4]
+# 	class_sdevs = [0.6, 0.6, 0.6, 0.6, 0.6]
+# 	class_nsamples = [1000, 1000, 1000, 1000, 1000]
+#
+# 	print(GetFisher(*gen_dataset(3, class_means, class_sdevs, class_nsamples)))
