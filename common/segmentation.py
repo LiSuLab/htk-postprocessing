@@ -141,14 +141,14 @@ class Phone(Enum):
     @property
     def hierarchy_feature_manner_close(self) -> Feature:
         # Vowel closeness
-        if self in {Phone.ia, Phone.ih, Phone.iy, Phone.ua}:
+        if self in {Phone.ia, Phone.ih, Phone.iy, Phone.ua, Phone.uh, Phone.uw}:
             return Feature.close
         if self in {Phone.ow}:
             return Feature.close_mid
         if self in {Phone.ae, Phone.ah, Phone.ao, Phone.ea, Phone.eh, Phone.er, Phone.ey, Phone.oy}:
             return Feature.open_mid
         if self in {Phone.aa, Phone.aw, Phone.ay, Phone.oh}:
-            return Feature.open
+            return Feature.open_
 
         # Consonant manner
         if self in {Phone.m, Phone.n, Phone.ng}:
@@ -157,7 +157,7 @@ class Phone(Enum):
             return Feature.stop
         if self in {Phone.ch, Phone.jh}:
             return Feature.affricate
-        if self in {Phone.f, Phone.s, Phone.sh, Phone.th, Phone.v}:
+        if self in {Phone.f, Phone.s, Phone.sh, Phone.th, Phone.v, Phone.z}:
             return Feature.fricative
         if self in {Phone.hh, Phone.l, Phone.r, Phone.w, Phone.y}:
             return Feature.approximant
