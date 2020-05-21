@@ -14,6 +14,7 @@ caiwingfield.net
 2020
 ---------------------------
 """
+from typing import Callable
 from logging import getLogger, basicConfig, INFO
 
 from numpy import array, nan, full
@@ -21,7 +22,7 @@ from numpy import array, nan, full
 from common.layers import load_and_stack_data_for_layer, DNNLayer
 from common.logging import print_progress
 from common.maths import quantile_of_score, shuffle
-from common.segmentation import PhoneSegmentationSet
+from common.segmentation import PhoneSegmentationSet, Phone
 from fisher.fisher import GetFisher
 
 logger = getLogger(__name__)
@@ -29,7 +30,7 @@ logger = getLogger(__name__)
 N_PERMUTATIONS = 5_000
 
 
-def main(layer: DNNLayer):
+def statistics_for_class(layer: DNNLayer, class_labelling: Callable[[Phone], int]):
 
     logger.info(layer.name)
 
@@ -39,7 +40,7 @@ def main(layer: DNNLayer):
     _, _, activations_per_word_phone, labels_per_word_phone, _ = load_and_stack_data_for_layer(layer,
                                                                                                phone_segmentations)
     # using numpy for fast shuffling, so labels must be in array of ints (underlying value of Phone)
-    label_array: array = array([l.value for l in labels_per_word_phone])
+    label_array: array = array([class_labelling(l) for l in labels_per_word_phone])
 
     observed_value = statistic_for_labelling(activations_per_word_phone, label_array)
 
@@ -55,6 +56,9 @@ def main(layer: DNNLayer):
 
     logger.info(f"\tcluster statistic: {observed_value}")
     logger.info(f"\tp-value for {N_PERMUTATIONS} permutations: {p_value}")
+    if observed_value > max(distribution):
+        logger.info(f"\t\tstatistic ({observed_value}) was largest in distribution (max={max(distribution)})")
+        logger.info(f"\t\tthis should be noted, and p-value should instead be \"< {1/N_PERMUTATIONS}\"")
 
 
 def statistic_for_labelling(activations_per_word_phone: array, labels: array) -> float:
@@ -73,4 +77,14 @@ if __name__ == '__main__':
     basicConfig(format='%(asctime)s | %(levelname)s | %(module)s | %(message)s', datefmt="%Y-%m-%d %H:%M:%S",
                 level=INFO)
     for l in DNNLayer:
-        main(l)
+        logger.info("Phone classification")
+        statistics_for_class(l, class_labelling=lambda phone: phone.value)
+
+        logger.info("Place/front feature hierarchy classification")
+        statistics_for_class(l, class_labelling=lambda phone: phone.hierarchy_feature_place_front.value
+                                                              # hh has no place feature, and features are 1-indexed, so
+                                                              # we can give it a 0 class id all by itself
+                                                              if phone != Phone.hh else 0)
+
+        logger.info("Manner/close feature hierarchy classification")
+        statistics_for_class(l, class_labelling=lambda phone: phone.hierarchy_feature_manner_close.value)

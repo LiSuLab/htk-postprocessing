@@ -1,5 +1,5 @@
 from __future__ import annotations
-from enum import Enum, auto
+from enum import Enum
 from pathlib import Path
 from typing import Dict, List
 
@@ -117,29 +117,76 @@ class Phone(Enum):
                 for feature in Feature
                 if self in feature.phones]
 
+    @property
+    def hierarchy_feature_place_front(self) -> Feature:
+        # Vowel frontness
+        if self in {Phone.ae, Phone.ea, Phone.eh, Phone.ey, Phone.ia, Phone.ih, Phone.iy}:
+            return Feature.front
+        if self in {Phone.aw, Phone.ay, Phone.er, Phone.ow}:
+            return Feature.central
+        if self in {Phone.aa, Phone.ah, Phone.ao, Phone.oh, Phone.oy, Phone.uh, Phone.uw}:
+            return Feature.back
+
+        # Consonant place
+        if self in {Phone.b, Phone.f, Phone.m, Phone.p, Phone.v}:
+            return Feature.labial
+        if self in {Phone.ch, Phone.d, Phone.jh, Phone.l, Phone.n, Phone.r, Phone.s, Phone.sh, Phone.t, Phone.th, Phone.y, Phone.z}:
+            return Feature.coronal
+        if self in {Phone.g, Phone.k, Phone.ng, Phone.w}:
+            return Feature.dorsal
+        # Phone.hh doesn't have a place feature, so will raise
+
+        raise NotImplementedError(self)
+
+    @property
+    def hierarchy_feature_manner_close(self) -> Feature:
+        # Vowel closeness
+        if self in {Phone.ia, Phone.ih, Phone.iy}:
+            return Feature.close
+        if self in {Phone.ow}:
+            return Feature.close_mid
+        if self in {Phone.ae, Phone.ah, Phone.ao, Phone.ea, Phone.eh, Phone.er, Phone.ey, Phone.oy}:
+            return Feature.open_mid
+        if self in {Phone.aa, Phone.aw, Phone.ay, Phone.oh}:
+            return Feature.open
+
+        # Consonant manner
+        if self in {Phone.m, Phone.n, Phone.ng}:
+            return Feature.nasal
+        if self in {Phone.b, Phone.d, Phone.g, Phone.k, Phone.p, Phone.t}:
+            return Feature.stop
+        if self in {Phone.ch, Phone.jh}:
+            return Feature.affricate
+        if self in {Phone.f, Phone.s, Phone.sh, Phone.th, Phone.v}:
+            return Feature.fricative
+        if self in {Phone.hh, Phone.l, Phone.r, Phone.w, Phone.y}:
+            return Feature.approximant
+
+        raise NotImplementedError(self)
+
 
 class Feature(Enum):
-    sonorant = auto()
-    voiced = auto()
-    syllabic = auto()
-    obstruent = auto()
-    labial = auto()
-    coronal = auto()
-    dorsal = auto()
-    stop = auto()
-    affricate = auto()
-    fricative = auto()
-    sibilant = auto()
-    approximant = auto()
-    nasal = auto()
-    front = auto()
-    central = auto()
-    back = auto()
-    close = auto()
-    close_mid = auto()
-    open_mid = auto()
-    open_ = auto()
-    rounded = auto()
+    sonorant    = 1
+    voiced      = 2
+    syllabic    = 3
+    obstruent   = 4
+    labial      = 5
+    coronal     = 6
+    dorsal      = 7
+    stop        = 8
+    affricate   = 9
+    fricative   = 10
+    sibilant    = 11
+    approximant = 12
+    nasal       = 13
+    front       = 14
+    central     = 15
+    back        = 16
+    close       = 17
+    close_mid   = 18
+    open_mid    = 19
+    open_       = 20
+    rounded     = 21
 
     @property
     def name(self) -> str:
