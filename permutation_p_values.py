@@ -89,16 +89,10 @@ if __name__ == '__main__':
                 level=INFO)
     for l in DNNLayer:
         logger.info("Phone classification")
-        statistics_for_class(l, class_labelling=lambda phone: phone.value,
-                             with_pca=True)
+        statistics_for_class(l, class_labelling=lambda phone: phone.value, with_pca=True)
 
         logger.info("Place/front feature hierarchy classification")
-        statistics_for_class(l, class_labelling=lambda phone: phone.hierarchy_feature_place_front.value
-                                                              # hh has no place feature, and features are 1-indexed, so
-                                                              # we can give it a 0 class id all by itself
-                                                              if phone != Phone.hh else 0,
-                             with_pca=True)
+        statistics_for_class(l, class_labelling=lambda phone: phone.hierarchy_feature_place_front.value, with_pca=True)
 
         logger.info("Manner/close feature hierarchy classification")
-        statistics_for_class(l, class_labelling=lambda phone: phone.hierarchy_feature_manner_close.value,
-                             with_pca=True)
+        statistics_for_class(l, class_labelling=lambda phone: phone.hierarchy_feature_manner_close.value, with_pca=True)

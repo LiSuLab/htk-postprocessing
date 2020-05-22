@@ -134,7 +134,8 @@ class Phone(Enum):
             return Feature.coronal
         if self in {Phone.g, Phone.k, Phone.ng, Phone.w}:
             return Feature.dorsal
-        # Phone.hh doesn't have a place feature, so will raise
+        if self in {Phone.hh}:
+            return Feature.velar
 
         raise NotImplementedError(self)
 
@@ -173,20 +174,21 @@ class Feature(Enum):
     labial      = 5
     coronal     = 6
     dorsal      = 7
-    stop        = 8
-    affricate   = 9
-    fricative   = 10
-    sibilant    = 11
-    approximant = 12
-    nasal       = 13
-    front       = 14
-    central     = 15
-    back        = 16
-    close       = 17
-    close_mid   = 18
-    open_mid    = 19
-    open_       = 20
-    rounded     = 21
+    velar       = 8
+    stop        = 9
+    affricate   = 10
+    fricative   = 11
+    sibilant    = 12
+    approximant = 13
+    nasal       = 14
+    front       = 15
+    central     = 16
+    back        = 17
+    close       = 18
+    close_mid   = 19
+    open_mid    = 20
+    open_       = 21
+    rounded     = 22
 
     @property
     def name(self) -> str:
