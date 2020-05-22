@@ -18,6 +18,7 @@ from typing import Callable
 from logging import getLogger, basicConfig, INFO
 
 from numpy import array, nan, full
+from sklearn.decomposition import PCA
 
 from common.layers import load_and_stack_data_for_layer, DNNLayer
 from common.logging import print_progress
@@ -28,9 +29,10 @@ from fisher.fisher import GetFisher
 logger = getLogger(__name__)
 
 N_PERMUTATIONS = 5_000
+PCA_DIMS = 26
 
 
-def statistics_for_class(layer: DNNLayer, class_labelling: Callable[[Phone], int]):
+def statistics_for_class(layer: DNNLayer, class_labelling: Callable[[Phone], int], with_pca: bool):
 
     logger.info(layer.name)
 
@@ -42,14 +44,23 @@ def statistics_for_class(layer: DNNLayer, class_labelling: Callable[[Phone], int
     # using numpy for fast shuffling, so labels must be in array of ints (underlying value of Phone)
     label_array: array = array([class_labelling(l) for l in labels_per_word_phone])
 
-    observed_value = statistic_for_labelling(activations_per_word_phone, label_array)
+    activations: array
+    if with_pca:
+        logger.info(f"Applying PCA ({activations_per_word_phone.shape[1]} -> {PCA_DIMS} dims)")
+        pca = PCA(n_components=PCA_DIMS)
+        activations = pca.fit_transform(activations_per_word_phone)
+        logger.info(f"\tExplained variance: {sum(pca.explained_variance_ratio_)} ({', '.join(list(f'{v:0.2}' for v in pca.explained_variance_ratio_))})")
+    else:
+        activations = activations_per_word_phone
+
+    observed_value = statistic_for_labelling(activations, label_array)
 
     # preallocate permutation distribution of cluster stats
     distribution: array = full(N_PERMUTATIONS, nan)
 
     for permutation_i in range(N_PERMUTATIONS):
         shuffled_labels = shuffle(label_array)
-        distribution[permutation_i] = (statistic_for_labelling(activations_per_word_phone, shuffled_labels))
+        distribution[permutation_i] = (statistic_for_labelling(activations, shuffled_labels))
         print_progress(permutation_i + 1, N_PERMUTATIONS)
 
     p_value = 1 - quantile_of_score(distribution, observed_value, kind='strict')
@@ -78,13 +89,16 @@ if __name__ == '__main__':
                 level=INFO)
     for l in DNNLayer:
         logger.info("Phone classification")
-        statistics_for_class(l, class_labelling=lambda phone: phone.value)
+        statistics_for_class(l, class_labelling=lambda phone: phone.value,
+                             with_pca=True)
 
         logger.info("Place/front feature hierarchy classification")
         statistics_for_class(l, class_labelling=lambda phone: phone.hierarchy_feature_place_front.value
                                                               # hh has no place feature, and features are 1-indexed, so
                                                               # we can give it a 0 class id all by itself
-                                                              if phone != Phone.hh else 0)
+                                                              if phone != Phone.hh else 0,
+                             with_pca=True)
 
         logger.info("Manner/close feature hierarchy classification")
-        statistics_for_class(l, class_labelling=lambda phone: phone.hierarchy_feature_manner_close.value)
+        statistics_for_class(l, class_labelling=lambda phone: phone.hierarchy_feature_manner_close.value,
+                             with_pca=True)
