@@ -15,7 +15,7 @@ caiwingfield.net
 ---------------------------
 """
 from enum import Enum, auto
-from typing import Callable
+from typing import Callable, Optional
 from logging import getLogger, basicConfig, INFO
 
 from numpy import array, nan, full
@@ -30,16 +30,16 @@ from fisher.fisher import GetFisher
 
 logger = getLogger(__name__)
 
-N_PERMUTATIONS = 5_000
-PCA_DIMS = 26
-
 
 class Measure(Enum):
     Fisher        = auto()
     DaviesBouldin = auto()
 
 
-def statistics_for_class(layer: DNNLayer, class_labelling: Callable[[Phone], int], measure: Measure, with_pca: bool):
+def statistics_for_class(layer: DNNLayer, class_labelling: Callable[[Phone], int], measure: Measure, pca_dims: Optional[int], p_value_perms: Optional[int]) -> None:
+
+    with_pca = pca_dims is not None
+    compute_p_value = p_value_perms is not None
 
     phone_segmentations = PhoneSegmentationSet.load()
 
@@ -51,8 +51,8 @@ def statistics_for_class(layer: DNNLayer, class_labelling: Callable[[Phone], int
 
     activations: array
     if with_pca:
-        logger.info(f"\tApplying PCA ({activations_per_word_phone.shape[1]} -> {PCA_DIMS} dims)")
-        pca = PCA(n_components=PCA_DIMS)
+        logger.info(f"\tApplying PCA ({activations_per_word_phone.shape[1]} -> {pca_dims} dims)")
+        pca = PCA(n_components=pca_dims)
         activations = pca.fit_transform(activations_per_word_phone)
         logger.info(f"\t\tExplained variance: {sum(pca.explained_variance_ratio_)} ({', '.join(list(f'{v:0.2}' for v in pca.explained_variance_ratio_))})")
     else:
@@ -62,14 +62,17 @@ def statistics_for_class(layer: DNNLayer, class_labelling: Callable[[Phone], int
 
     logger.info(f"\tcluster statistic ({measure.name}): {observed_value}")
 
+    if not compute_p_value:
+        return
+
     # preallocate permutation null distribution of cluster stats
-    null_distribution: array = full(N_PERMUTATIONS, nan)
+    null_distribution: array = full(p_value_perms, nan)
 
     # create null distribution
-    for permutation_i in range(N_PERMUTATIONS):
+    for permutation_i in range(p_value_perms):
         shuffled_labels = shuffle(label_array)
         null_distribution[permutation_i] = statistic_for_labelling(activations, shuffled_labels, measure=measure)
-        print_progress(permutation_i + 1, N_PERMUTATIONS)
+        print_progress(permutation_i + 1, p_value_perms)
 
     # Compute p-values from distribution
     extra_messages = []
@@ -78,17 +81,17 @@ def statistics_for_class(layer: DNNLayer, class_labelling: Callable[[Phone], int
         p_value = 1 - quantile_of_score(null_distribution, observed_value, kind='strict')
         if observed_value > max(null_distribution):
             extra_messages.append(f"statistic ({observed_value}) was largest in null distribution (max={max(null_distribution)})")
-            extra_messages.append(f"this should be noted, and p-value should instead be \"< {1/N_PERMUTATIONS}\"")
+            extra_messages.append(f"this should be noted, and p-value should instead be \"< {1 / p_value_perms}\"")
     elif measure == Measure.DaviesBouldin:
         # lower is better
         p_value = quantile_of_score(null_distribution, observed_value, kind='strict')
         if observed_value < min(null_distribution):
             extra_messages.append(f"statistic ({observed_value}) was smallest in null distribution (min={min(null_distribution)})")
-            extra_messages.append(f"this should be noted, and p-value should instead be \"< {1/N_PERMUTATIONS}\"")
+            extra_messages.append(f"this should be noted, and p-value should instead be \"< {1 / p_value_perms}\"")
     else:
         raise NotImplementedError()
 
-    logger.info(f"\tp-value for {N_PERMUTATIONS} permutations: {p_value}")
+    logger.info(f"\tp-value for {p_value_perms} permutations: {p_value}")
     _ = [logger.info(f"\t\t{m}") for m in extra_messages]
 
 
@@ -112,17 +115,22 @@ def statistic_for_labelling(activations_per_word_phone: array, labels: array, me
 if __name__ == '__main__':
     basicConfig(format='%(asctime)s | %(levelname)s | %(module)s | %(message)s', datefmt="%Y-%m-%d %H:%M:%S",
                 level=INFO)
+
+    stat = Measure.DaviesBouldin
+    perms = 5_000
+    pca = None
+
     for l in DNNLayer:
         logger.info(f"=== {l.name} ===")
 
         logger.info("- Phone classification")
         statistics_for_class(l, class_labelling=lambda phone: phone.value,
-                             measure=Measure.DaviesBouldin, with_pca=True)
+                             measure=stat, pca_dims=pca, p_value_perms=perms)
 
         logger.info("- Place/front feature hierarchy classification")
         statistics_for_class(l, class_labelling=lambda phone: phone.hierarchy_feature_place_front.value,
-                             measure=Measure.DaviesBouldin, with_pca=True)
+                             measure=stat, pca_dims=pca, p_value_perms=perms)
 
         logger.info("- Manner/close feature hierarchy classification")
         statistics_for_class(l, class_labelling=lambda phone: phone.hierarchy_feature_manner_close.value,
-                             measure=Measure.DaviesBouldin, with_pca=True)
+                             measure=stat, pca_dims=pca, p_value_perms=perms)
