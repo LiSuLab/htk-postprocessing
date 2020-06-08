@@ -20,7 +20,7 @@ from logging import getLogger, basicConfig, INFO
 
 from numpy import array, nan, full
 from sklearn.decomposition import PCA
-from sklearn.metrics import davies_bouldin_score
+from sklearn.metrics import davies_bouldin_score, silhouette_score
 
 from common.layers import load_and_stack_data_for_layer, DNNLayer
 from common.logging import print_progress
@@ -34,6 +34,7 @@ logger = getLogger(__name__)
 class Measure(Enum):
     Fisher        = auto()
     DaviesBouldin = auto()
+    Silhouette    = auto()
 
 
 def statistics_for_class(layer: DNNLayer, class_labelling: Callable[[Phone], int], measure: Measure, pca_dims: Optional[int], p_value_perms: Optional[int]) -> None:
@@ -76,7 +77,7 @@ def statistics_for_class(layer: DNNLayer, class_labelling: Callable[[Phone], int
 
     # Compute p-values from distribution
     extra_messages = []
-    if measure == Measure.Fisher:
+    if measure in {Measure.Fisher, Measure.Silhouette}:
         # higher is better
         p_value = 1 - quantile_of_score(null_distribution, observed_value, kind='strict')
         if observed_value > max(null_distribution):
@@ -108,6 +109,8 @@ def statistic_for_labelling(activations_per_word_phone: array, labels: array, me
         return GetFisher(data=activations_per_word_phone, labels=labels)
     elif measure == Measure.DaviesBouldin:
         return davies_bouldin_score(X=activations_per_word_phone, labels=labels)
+    elif measure == Measure.Silhouette:
+        return silhouette_score(activations_per_word_phone, labels=labels)
     else:
         raise NotImplementedError()
 
@@ -116,7 +119,7 @@ if __name__ == '__main__':
     basicConfig(format='%(asctime)s | %(levelname)s | %(module)s | %(message)s', datefmt="%Y-%m-%d %H:%M:%S",
                 level=INFO)
 
-    stat = Measure.DaviesBouldin
+    stat = Measure.Silhouette
     perms = 5_000
     pca = None
 
