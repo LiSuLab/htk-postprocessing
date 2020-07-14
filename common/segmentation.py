@@ -1,7 +1,7 @@
 from __future__ import annotations
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from pandas import DataFrame
 
@@ -117,17 +117,10 @@ class Phone(Enum):
                 for feature in Feature
                 if self in feature.phones]
 
-    @property
-    def hierarchy_feature_place_front(self) -> Feature:
-        # Vowel frontness
-        if self in {Phone.ae, Phone.ea, Phone.eh, Phone.ey, Phone.ia, Phone.ih, Phone.iy}:
-            return Feature.front
-        if self in {Phone.aw, Phone.ay, Phone.er, Phone.ow}:
-            return Feature.central
-        if self in {Phone.aa, Phone.ah, Phone.ao, Phone.oh, Phone.oy, Phone.uh, Phone.ua, Phone.uw}:
-            return Feature.back
+    # Individual non-exhaustive feature hierarchies
 
-        # Consonant place
+    @property
+    def hierarchy_feature_place(self) -> Optional[Feature]:
         if self in {Phone.b, Phone.f, Phone.m, Phone.p, Phone.v}:
             return Feature.labial
         if self in {Phone.ch, Phone.d, Phone.jh, Phone.l, Phone.n, Phone.r, Phone.s, Phone.sh, Phone.t, Phone.th, Phone.y, Phone.z}:
@@ -136,12 +129,20 @@ class Phone(Enum):
             return Feature.dorsal
         if self in {Phone.hh}:
             return Feature.velar
-
-        raise NotImplementedError(self)
+        return None
 
     @property
-    def hierarchy_feature_manner_close(self) -> Feature:
-        # Vowel closeness
+    def hierarchy_feature_front(self) -> Optional[Feature]:
+        if self in {Phone.ae, Phone.ea, Phone.eh, Phone.ey, Phone.ia, Phone.ih, Phone.iy}:
+            return Feature.front
+        if self in {Phone.aw, Phone.ay, Phone.er, Phone.ow}:
+            return Feature.central
+        if self in {Phone.aa, Phone.ah, Phone.ao, Phone.oh, Phone.oy, Phone.uh, Phone.ua, Phone.uw}:
+            return Feature.back
+        return None
+
+    @property
+    def hierarchy_feature_close(self) -> Optional[Feature]:
         if self in {Phone.ia, Phone.ih, Phone.iy, Phone.ua, Phone.uh, Phone.uw}:
             return Feature.close
         if self in {Phone.ow}:
@@ -150,8 +151,10 @@ class Phone(Enum):
             return Feature.open_mid
         if self in {Phone.aa, Phone.aw, Phone.ay, Phone.oh}:
             return Feature.open_
+        return None
 
-        # Consonant manner
+    @property
+    def hierarchy_feature_manner(self) -> Optional[Feature]:
         if self in {Phone.m, Phone.n, Phone.ng}:
             return Feature.nasal
         if self in {Phone.b, Phone.d, Phone.g, Phone.k, Phone.p, Phone.t}:
@@ -162,7 +165,24 @@ class Phone(Enum):
             return Feature.fricative
         if self in {Phone.hh, Phone.l, Phone.r, Phone.w, Phone.y}:
             return Feature.approximant
+        return None
 
+    # Combined exhaustive feature hierarchies
+
+    @property
+    def hierarchy_features_place_front(self) -> Feature:
+        if self in {Phone.ae, Phone.ea, Phone.eh, Phone.ey, Phone.ia, Phone.ih, Phone.iy, Phone.aw, Phone.ay, Phone.er, Phone.ow, Phone.aa, Phone.ah, Phone.ao, Phone.oh, Phone.oy, Phone.uh, Phone.ua, Phone.uw}:
+            return self.hierarchy_feature_front
+        if self in {Phone.b, Phone.f, Phone.m, Phone.p, Phone.v, Phone.ch, Phone.d, Phone.jh, Phone.l, Phone.n, Phone.r, Phone.s, Phone.sh, Phone.t, Phone.th, Phone.y, Phone.z, Phone.g, Phone.k, Phone.ng, Phone.w, Phone.hh}:
+            return self.hierarchy_feature_place
+        raise NotImplementedError(self)
+
+    @property
+    def hierarchy_features_manner_close(self) -> Feature:
+        if self in {Phone.ia, Phone.ih, Phone.iy, Phone.ua, Phone.uh, Phone.uw, Phone.ow, Phone.ae, Phone.ah, Phone.ao, Phone.ea, Phone.eh, Phone.er, Phone.ey, Phone.oy, Phone.aa, Phone.aw, Phone.ay, Phone.oh}:
+            return self.hierarchy_feature_close
+        if self in {Phone.m, Phone.n, Phone.ng, Phone.b, Phone.d, Phone.g, Phone.k, Phone.p, Phone.t, Phone.ch, Phone.jh, Phone.f, Phone.s, Phone.sh, Phone.th, Phone.v, Phone.z, Phone.hh, Phone.l, Phone.r, Phone.w, Phone.y}:
+            return self.hierarchy_feature_manner
         raise NotImplementedError(self)
 
 

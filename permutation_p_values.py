@@ -18,7 +18,7 @@ from enum import Enum, auto
 from typing import Callable, Optional
 from logging import getLogger, basicConfig, INFO
 
-from numpy import array, nan, full
+from numpy import array, nan, full, where
 from sklearn.decomposition import PCA
 from sklearn.metrics import davies_bouldin_score, silhouette_score
 
@@ -40,7 +40,7 @@ class Measure(Enum):
     Dunn          = auto()
 
 
-def statistics_for_class(layer: DNNLayer, class_labelling: Callable[[Phone], int], measure: Measure, pca_dims: Optional[int], p_value_perms: Optional[int]) -> None:
+def statistics_for_class(layer: DNNLayer, class_labelling: Callable[[Phone], Optional[int]], measure: Measure, pca_dims: Optional[int], p_value_perms: Optional[int]) -> None:
 
     with_pca = pca_dims is not None
     compute_p_value = p_value_perms is not None
@@ -52,6 +52,10 @@ def statistics_for_class(layer: DNNLayer, class_labelling: Callable[[Phone], int
                                                                                                phone_segmentations)
     # using numpy for fast shuffling, so labels must be in array of ints (underlying value of Phone)
     label_array: array = array([class_labelling(l) for l in labels_per_word_phone])
+
+    # Filter out rows where labels are None
+    activations_per_word_phone = activations_per_word_phone[where(label_array != None)[0], :]
+    label_array = label_array[where(label_array != None)[0]]
 
     activations: array
     if with_pca:
@@ -124,21 +128,20 @@ if __name__ == '__main__':
     basicConfig(format='%(asctime)s | %(levelname)s | %(module)s | %(message)s', datefmt="%Y-%m-%d %H:%M:%S",
                 level=INFO)
 
-    stat = Measure.Dunn
-    perms = None#5_000
+    stat = Measure.Silhouette
+    perms = 5_000
     pca = None
 
     for l in DNNLayer:
         logger.info(f"=== {l.name} ===")
 
-        logger.info("- Phone classification")
-        statistics_for_class(l, class_labelling=lambda phone: phone.value,
-                             measure=stat, pca_dims=pca, p_value_perms=perms)
+        for name, labelling in [
+            ("Phone",  lambda phone: phone.value),
+            ("Place",  lambda phone: phone.hierarchy_feature_place.value  if phone.hierarchy_feature_place  is not None else None),
+            ("Manner", lambda phone: phone.hierarchy_feature_manner.value if phone.hierarchy_feature_manner is not None else None),
+            ("Front",  lambda phone: phone.hierarchy_feature_front.value  if phone.hierarchy_feature_front  is not None else None),
+            ("Close",  lambda phone: phone.hierarchy_feature_close.value  if phone.hierarchy_feature_close  is not None else None),
+        ]:
 
-        logger.info("- Place/front feature hierarchy classification")
-        statistics_for_class(l, class_labelling=lambda phone: phone.hierarchy_feature_place_front.value,
-                             measure=stat, pca_dims=pca, p_value_perms=perms)
-
-        logger.info("- Manner/close feature hierarchy classification")
-        statistics_for_class(l, class_labelling=lambda phone: phone.hierarchy_feature_manner_close.value,
-                             measure=stat, pca_dims=pca, p_value_perms=perms)
+            logger.info(f"- {name} feature hierarchy classification")
+            statistics_for_class(l, class_labelling=labelling, measure=stat, pca_dims=pca, p_value_perms=perms)
