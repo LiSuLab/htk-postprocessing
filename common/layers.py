@@ -72,10 +72,15 @@ def load_and_stack_data_for_layer(
     """
 
     # word -> (time x node) array
+    # TODO: this naming is a real mess
     try:
         layer_activations = load_matlab_file(Path(from_dir, file_pattern.format(layer.name)))
     except FileNotFoundError:
-        layer_activations = load_matlab_file(Path(from_dir, file_pattern.format(layer.old_name)))
+        try:
+            layer_activations = load_matlab_file(Path(from_dir, file_pattern.format(layer.old_name)))
+        except FileNotFoundError:
+            layer_activations = load_matlab_file(Path(from_dir, file_pattern.format(layer.value)))
+
 
     # frame x node
     activations_per_frame = []

@@ -14,6 +14,7 @@ caiwingfield.net
 2020
 ---------------------------
 """
+from collections import namedtuple
 from enum import Enum, auto
 from pathlib import Path
 from typing import Callable, Optional
@@ -140,7 +141,7 @@ if __name__ == '__main__':
     alignments_root_dir = Path(root_dir, "phonetic alignments")
     activations_dir = Path(root_dir, "extracted activations mat files")
 
-    for s in [0, 3, 4, 5]:
+    for s in [3, 4, 5, 0]:
 
         # Set up new log file handler
         fh = FileHandler(Path(root_dir, "cluster analysis", f"clustering system{s} {stat.name}.log"), "w")
@@ -150,8 +151,20 @@ if __name__ == '__main__':
 
         logger.info(f" <<< SYSTEM {s} >>> ")
 
-        for l in DNNLayer:
-            logger.info(f"=== {l.name} ===")
+        if s == 0:
+            layers = [l for l in DNNLayer]
+        else:
+            # TODO: dear god, I wasn't expecting to have to adapt this for new network architectures
+            #   this should pass the duck test for DNNLayer
+            L = namedtuple("L", ["name", "old_name", "value"])
+            # Systems 3, 4 and 5 only had outputs labelled 0--5, starting at the first hidden layer
+            # So I've copied the activations for the FBK layer to the activation directories, and called if FBK
+            # (The FBK activation will be the same for all layers, but we still need to reanalyse it as the
+            # segmentations have changed).
+            layers = [L("FBK", "FBK", -1)] + [L(str(i), str(i), i) for i in range(6)]
+
+        for l in layers:
+            logger.info(f"=== {l} ===")
 
             for name, labelling in [
                 ("Phone",  lambda phone: phone.value),
