@@ -35,7 +35,7 @@ logger = getLogger(__name__)
 def run_tsne_script():
     """The script."""
 
-    phone_segmentations = PhoneSegmentationSet.load()
+    phone_segmentations = PhoneSegmentationSet.load(from_dir=Path("/Users/cai/Dox/Academic/Analyses/Lexpro/DNN mapping/phonetic alignments/system0/segmentation"))
 
     for layer in reversed(DNNLayer):  # run top-to-bottom
 
@@ -45,7 +45,9 @@ def run_tsne_script():
             activations_per_frame, labels_per_frame,
             activations_per_word_phone, labels_per_word_phone,
             activations_per_phone
-        ) = load_and_stack_data_for_layer(layer, phone_segmentations)
+        ) = load_and_stack_data_for_layer(layer, phone_segmentations,
+                                          from_dir=Path("/Users/cai/Dox/Academic/Analyses/Lexpro/DNN mapping/extracted activations mat files/system0"),
+                                          file_pattern="hidden_layer_{0}_activations.mat")
 
         t_sne_frame = compute_tsne_positions(activations_per_frame, name=f"{layer.old_name} frame", perplexity=40)
         t_sne_word_phone = compute_tsne_positions(activations_per_word_phone, name=f"{layer.old_name} word–phone", perplexity=30)

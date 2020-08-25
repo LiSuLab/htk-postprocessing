@@ -1,24 +1,14 @@
-# coding=utf-8
 """
 Extract some phone boundaries from HTK's output file.
 """
 
-import sys
 import re
 import os
 
-import glob
-from enum import Enum
-
-import numpy
-import scipy
-import scipy.io
-
-from htk_extraction_tools import *
+from pathlib import Path
 
 
-def do_split(input_dir_path, output_dir_path):
-	mlf_file_name = "ann_triphone.mlf"
+def do_split(mlf_path, output_dir_path):
 
 	rec_label_line_re = re.compile((
 		r"^\"test/(?P<rec_label>[a-z]+\.rec)\"$"
@@ -30,11 +20,9 @@ def do_split(input_dir_path, output_dir_path):
 		r"^#!MLF!#$"
 	))
 
-	reader_state = JustReadLine.Empty
-
 	rec_file = []
 
-	with open(os.path.join(input_dir_path, mlf_file_name), 'r', encoding='utf-8') as mlf_file:
+	with open(mlf_path, 'r', encoding='utf-8') as mlf_file:
 		for line in mlf_file:
 
 			rec_label_line_match = rec_label_line_re.match(line)
@@ -56,29 +44,17 @@ def do_split(input_dir_path, output_dir_path):
 				rec_file.write("{0}".format(line))
 
 
-class JustReadLine(Enum):
-	"""
-	Represents state when reading a mlf file.
-	"""
-	Empty = 0
-	RecLabel = 1
-
-
-def main():
-	"""
-	Do dat analysis.
-	"""
-
-	# Define some paths
-	input_dir_path      = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'triphone_boundaries_3_5')
-	output_dir_path     = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'triphone_boundaries_3_5')
-
-	do_split(input_dir_path, output_dir_path)
-
-
 # Boilerplate
 if __name__ == "__main__":
+	input_root = Path("/Users/cai/Dox/Academic/Analyses/Lexpro/DNN mapping/phonetic alignments")
 
-	# Log to file
-	#with open(get_log_filename(__file__), mode="a", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
-		main()
+	for s in [0, 3, 4, 5]:
+		system_root_dir = Path(input_root, f"system{s}")
+		output_dir = Path(system_root_dir, "separated")
+
+		if not output_dir.is_dir():
+			output_dir.mkdir()
+
+		mlf_path = list(system_root_dir.glob("*.mlf"))[0]
+
+		do_split(mlf_path, output_dir)

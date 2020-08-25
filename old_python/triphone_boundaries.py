@@ -1,23 +1,19 @@
-# coding=utf-8
 """
 Extract some phone boundaries from HTK's output file.
 """
 
-import sys
 import re
 import os
-
-import glob
-from enum import Enum
+from pathlib import Path
 
 import numpy
 import scipy
 import scipy.io
 
-from htk_extraction_tools import *
+from old_python.htk_extraction_tools import get_word_list, triphone_to_phone_triplet
 
 
-def get_segmentation(input_dir_path, word_list, frame_cap, convert_to_phones=True):
+def get_segmentation(input_dir_path, word_list, convert_to_phones=True):
 
 	# Regular expression for frame and list of node activations
 	segment_re = re.compile((
@@ -26,7 +22,7 @@ def get_segmentation(input_dir_path, word_list, frame_cap, convert_to_phones=Tru
 		# The offset of the segment
 		r"(?P<offset>[0-9]+)\s+"
 		# The tri/phone
-		r"(?P<segment_label>[a-z\+\-]+)\s+"
+		r"(?P<segment_label>[a-z+\-]+)\s+"
 		# The rest
 		r".*$"))
 
@@ -35,8 +31,6 @@ def get_segmentation(input_dir_path, word_list, frame_cap, convert_to_phones=Tru
 
 	# Work on each word separately and in turn
 	for word in word_list:
-
-		prints("Segmenting word \"{0}\"...", word)
 
 		word_boundaries = []
 
@@ -83,37 +77,27 @@ def save_boundaries(boundaries, output_dir_path):
 
 	# Save
 	scipy.io.savemat(
-		os.path.join(output_dir_path, "triphone_boundaries"),
+		os.path.join(output_dir_path, "triphone_boundaries.mat"),
 		boundaries,
-		appendmat = True,
-		long_field_names = True)
+		long_field_names=True)
 
 
-def main():
-	"""
-	Do dat analysis.
-	"""
-
-	# Define some paths
-	input_dir_path      = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'triphone_boundaries_3_5')
-	output_dir_path     = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'py_out')
-	word_list_file_path = os.path.join('/Users', 'cai', 'Desktop', 'scratch', 'Stimuli-Lexpro-MEG-Single-col.txt')
-
-	# Get the words from the words file
-	word_list = list(get_word_list(word_list_file_path))
-
-	# The number of frames to use in the analysis
-	frame_cap = 0#get_min_frame_index(input_dir_path, word_list)
-
-	segmentation = get_segmentation(input_dir_path, word_list, frame_cap)
-
-	save_boundaries(segmentation, output_dir_path)
-
-
-
-# Boilerplate
 if __name__ == "__main__":
 
-	# Log to file
-	#with open(get_log_filename(__file__), mode="a", encoding="utf-8") as log_file, RedirectStdoutTo(log_file):
-		main()
+	input_root = Path("/Users/cai/Dox/Academic/Analyses/Lexpro/DNN mapping/phonetic alignments")
+	word_list_path = Path("/Users/cai/Dox/Academic/Analyses/Lexpro/DNN mapping/stimulus wordlist.txt")
+
+	# Get the words from the words file
+	word_list = list(get_word_list(word_list_path))
+
+	for s in [0, 3, 4, 5]:
+		system_root_dir = Path(input_root, f"system{s}")
+		rec_dir = Path(system_root_dir, "separated")
+		output_dir_path = Path(system_root_dir, "segmentation")
+
+		if not output_dir_path.is_dir():
+			output_dir_path.mkdir()
+
+		segmentation = get_segmentation(rec_dir, word_list)
+
+		save_boundaries(segmentation, output_dir_path)

@@ -8,7 +8,6 @@ from typing import Tuple, List, Dict, DefaultDict
 from numpy import mean, array
 
 from .matlab_interop import load_matlab_file
-from .paths import LOAD_DIR
 from common.segmentation import Phone, PhoneSegmentation
 
 
@@ -43,7 +42,12 @@ class DNNLayer(Enum):
             return f"Layer{self.value}"
 
 
-def load_and_stack_data_for_layer(layer: DNNLayer, phone_segmentations) -> Tuple[
+def load_and_stack_data_for_layer(
+    layer: DNNLayer,
+    phone_segmentations,
+    from_dir,
+    file_pattern,
+) -> Tuple[
     array, List[Phone],
     array, List[Phone],
     Dict[Phone, array]
@@ -68,7 +72,10 @@ def load_and_stack_data_for_layer(layer: DNNLayer, phone_segmentations) -> Tuple
     """
 
     # word -> (time x node) array
-    layer_activations = load_matlab_file(Path(LOAD_DIR, f"hidden_layer_{layer.old_name}_activations.mat"))
+    try:
+        layer_activations = load_matlab_file(Path(from_dir, file_pattern.format(layer.name)))
+    except FileNotFoundError:
+        layer_activations = load_matlab_file(Path(from_dir, file_pattern.format(layer.old_name)))
 
     # frame x node
     activations_per_frame = []

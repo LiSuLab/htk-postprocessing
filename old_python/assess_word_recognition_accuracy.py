@@ -67,7 +67,7 @@ def main():
 	word_list = list(get_word_list(word_list_file_path))
 
 	# The number of frames to use in the analysis
-	frame_cap = 0#get_min_frame_index(input_dir_path, word_list)
+	frame_cap = 0#get_min_frame_index(input_path, word_list)
 
 	segmentation = count_correct_words(input_dir_path, word_list)
 

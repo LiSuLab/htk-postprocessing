@@ -15,8 +15,9 @@ caiwingfield.net
 ---------------------------
 """
 from enum import Enum, auto
+from pathlib import Path
 from typing import Callable, Optional
-from logging import getLogger, basicConfig, INFO
+from logging import getLogger, basicConfig, INFO, FileHandler
 
 from numpy import array, nan, full, where
 from sklearn.decomposition import PCA
@@ -40,16 +41,19 @@ class Measure(Enum):
     Dunn          = auto()
 
 
-def statistics_for_class(layer: DNNLayer, class_labelling: Callable[[Phone], Optional[int]], measure: Measure, pca_dims: Optional[int], p_value_perms: Optional[int]) -> None:
+def statistics_for_class(segmentation_path: Path, activations_path: Path, file_pattern: str,
+                         layer: DNNLayer, class_labelling: Callable[[Phone], Optional[int]], measure: Measure, pca_dims: Optional[int], p_value_perms: Optional[int]) -> None:
 
     with_pca = pca_dims is not None
     compute_p_value = p_value_perms is not None
 
-    phone_segmentations = PhoneSegmentationSet.load()
+    phone_segmentations = PhoneSegmentationSet.load(from_dir=segmentation_path)
 
     # Load data in a very redundant way (but we already have code for it)
-    _, _, activations_per_word_phone, labels_per_word_phone, _ = load_and_stack_data_for_layer(layer,
-                                                                                               phone_segmentations)
+    _, _, activations_per_word_phone, labels_per_word_phone, _ = load_and_stack_data_for_layer(layer, phone_segmentations,
+                                                                                               from_dir=activations_path,
+                                                                                               file_pattern=file_pattern)
+
     # using numpy for fast shuffling, so labels must be in array of ints (underlying value of Phone)
     label_array: array = array([class_labelling(l) for l in labels_per_word_phone])
 
@@ -125,23 +129,42 @@ def statistic_for_labelling(activations_per_word_phone: array, labels: array, me
 
 
 if __name__ == '__main__':
-    basicConfig(format='%(asctime)s | %(levelname)s | %(module)s | %(message)s', datefmt="%Y-%m-%d %H:%M:%S",
-                level=INFO)
+    basicConfig(format='%(asctime)s | %(levelname)s | %(module)s | %(message)s', datefmt="%Y-%m-%d %H:%M:%S", level=INFO)
 
-    stat = Measure.Silhouette
-    perms = 5_000
+    stat = Measure.DaviesBouldin
+    perms = None#5_000
     pca = None
 
-    for l in DNNLayer:
-        logger.info(f"=== {l.name} ===")
+    root_dir = Path("/Users/cai/Dox/Academic/Analyses/Lexpro/DNN mapping")
+    cluster_analysis_root_dir = Path(root_dir, "cluster analysis")
+    alignments_root_dir = Path(root_dir, "phonetic alignments")
+    activations_dir = Path(root_dir, "extracted activations mat files")
 
-        for name, labelling in [
-            ("Phone",  lambda phone: phone.value),
-            ("Place",  lambda phone: phone.hierarchy_feature_place.value  if phone.hierarchy_feature_place  is not None else None),
-            ("Manner", lambda phone: phone.hierarchy_feature_manner.value if phone.hierarchy_feature_manner is not None else None),
-            ("Front",  lambda phone: phone.hierarchy_feature_front.value  if phone.hierarchy_feature_front  is not None else None),
-            ("Close",  lambda phone: phone.hierarchy_feature_close.value  if phone.hierarchy_feature_close  is not None else None),
-        ]:
+    for s in [0, 3, 4, 5]:
 
-            logger.info(f"- {name} feature hierarchy classification")
-            statistics_for_class(l, class_labelling=labelling, measure=stat, pca_dims=pca, p_value_perms=perms)
+        # Set up new log file handler
+        fh = FileHandler(Path(root_dir, "cluster analysis", f"clustering system{s} {stat.name}.log"), "w")
+        for h in logger.handlers[:]:
+            logger.removeHandler(h)
+        logger.addHandler(fh)
+
+        logger.info(f" <<< SYSTEM {s} >>> ")
+
+        for l in DNNLayer:
+            logger.info(f"=== {l.name} ===")
+
+            for name, labelling in [
+                ("Phone",  lambda phone: phone.value),
+                ("Place",  lambda phone: phone.hierarchy_feature_place.value  if phone.hierarchy_feature_place  is not None else None),
+                ("Manner", lambda phone: phone.hierarchy_feature_manner.value if phone.hierarchy_feature_manner is not None else None),
+                ("Front",  lambda phone: phone.hierarchy_feature_front.value  if phone.hierarchy_feature_front  is not None else None),
+                ("Close",  lambda phone: phone.hierarchy_feature_close.value  if phone.hierarchy_feature_close  is not None else None),
+            ]:
+
+                logger.info(f"- {name} feature hierarchy classification")
+                statistics_for_class(segmentation_path=Path(alignments_root_dir, f"system{s}", "segmentation"),
+                                     activations_path=Path(activations_dir, f"system{s}"),
+                                     file_pattern="hidden_layer_{0}_activations.mat" if s == 0 else "hmm{0}_activations.mat",
+                                     layer=l, class_labelling=labelling, measure=stat, pca_dims=pca, p_value_perms=perms)
+
+        logger.info("")

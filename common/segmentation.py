@@ -6,7 +6,6 @@ from typing import Dict, List, Optional
 from pandas import DataFrame
 
 from .matlab_interop import load_matlab_file
-from .paths import LOAD_DIR
 
 
 class PhoneSegmentationSet:
@@ -35,8 +34,8 @@ class PhoneSegmentationSet:
         return sorted(self._segmentation.keys())
 
     @classmethod
-    def load(cls) -> PhoneSegmentationSet:
-        return cls(load_matlab_file(Path(LOAD_DIR, "triphone_boundaries.mat")))
+    def load(cls, from_dir) -> PhoneSegmentationSet:
+        return cls(load_matlab_file(Path(from_dir, "triphone_boundaries.mat")))
 
 
 class PhoneSegment:
