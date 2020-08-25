@@ -70,38 +70,39 @@ class Phone(Enum):
     b   = 7
     ch  = 8
     d   = 9
-    ea  = 10
-    eh  = 11
-    er  = 12
-    ey  = 13
-    f   = 14
-    g   = 15
-    hh  = 16
-    ia  = 17
-    ih  = 18
-    iy  = 19
-    jh  = 20
-    k   = 21
-    l   = 22
-    m   = 23
-    n   = 24
-    ng  = 25
-    oh  = 26
-    ow  = 27
-    oy  = 28
-    p   = 29
-    r   = 30
-    s   = 31
-    sh  = 32
-    t   = 33
-    th  = 34
-    ua  = 35
-    uh  = 36
-    uw  = 37
-    v   = 38
-    w   = 39
-    y   = 40
-    z   = 41
+    dh  = 10
+    ea  = 11
+    eh  = 12
+    er  = 13
+    ey  = 14
+    f   = 15
+    g   = 16
+    hh  = 17
+    ia  = 18
+    ih  = 19
+    iy  = 20
+    jh  = 21
+    k   = 22
+    l   = 23
+    m   = 24
+    n   = 25
+    ng  = 26
+    oh  = 27
+    ow  = 28
+    oy  = 29
+    p   = 30
+    r   = 31
+    s   = 32
+    sh  = 33
+    t   = 34
+    th  = 35
+    ua  = 36
+    uh  = 37
+    uw  = 38
+    v   = 39
+    w   = 40
+    y   = 41
+    z   = 42
 
     @classmethod
     def from_name(cls, name: str):
@@ -122,7 +123,7 @@ class Phone(Enum):
     def hierarchy_feature_place(self) -> Optional[Feature]:
         if self in {Phone.b, Phone.f, Phone.m, Phone.p, Phone.v}:
             return Feature.labial
-        if self in {Phone.ch, Phone.d, Phone.jh, Phone.l, Phone.n, Phone.r, Phone.s, Phone.sh, Phone.t, Phone.th, Phone.y, Phone.z}:
+        if self in {Phone.ch, Phone.d, Phone.dh, Phone.jh, Phone.l, Phone.n, Phone.r, Phone.s, Phone.sh, Phone.t, Phone.th, Phone.y, Phone.z}:
             return Feature.coronal
         if self in {Phone.g, Phone.k, Phone.ng, Phone.w}:
             return Feature.dorsal
@@ -160,7 +161,7 @@ class Phone(Enum):
             return Feature.stop
         if self in {Phone.ch, Phone.jh}:
             return Feature.affricate
-        if self in {Phone.f, Phone.s, Phone.sh, Phone.th, Phone.v, Phone.z}:
+        if self in {Phone.dh, Phone.f, Phone.s, Phone.sh, Phone.th, Phone.v, Phone.z}:
             return Feature.fricative
         if self in {Phone.hh, Phone.l, Phone.r, Phone.w, Phone.y}:
             return Feature.approximant
@@ -172,7 +173,7 @@ class Phone(Enum):
     def hierarchy_features_place_front(self) -> Feature:
         if self in {Phone.ae, Phone.ea, Phone.eh, Phone.ey, Phone.ia, Phone.ih, Phone.iy, Phone.aw, Phone.ay, Phone.er, Phone.ow, Phone.aa, Phone.ah, Phone.ao, Phone.oh, Phone.oy, Phone.uh, Phone.ua, Phone.uw}:
             return self.hierarchy_feature_front
-        if self in {Phone.b, Phone.f, Phone.m, Phone.p, Phone.v, Phone.ch, Phone.d, Phone.jh, Phone.l, Phone.n, Phone.r, Phone.s, Phone.sh, Phone.t, Phone.th, Phone.y, Phone.z, Phone.g, Phone.k, Phone.ng, Phone.w, Phone.hh}:
+        if self in {Phone.b, Phone.f, Phone.m, Phone.p, Phone.v, Phone.ch, Phone.d, Phone.dh, Phone.jh, Phone.l, Phone.n, Phone.r, Phone.s, Phone.sh, Phone.t, Phone.th, Phone.y, Phone.z, Phone.g, Phone.k, Phone.ng, Phone.w, Phone.hh}:
             return self.hierarchy_feature_place
         raise NotImplementedError(self)
 
@@ -180,7 +181,7 @@ class Phone(Enum):
     def hierarchy_features_manner_close(self) -> Feature:
         if self in {Phone.ia, Phone.ih, Phone.iy, Phone.ua, Phone.uh, Phone.uw, Phone.ow, Phone.ae, Phone.ah, Phone.ao, Phone.ea, Phone.eh, Phone.er, Phone.ey, Phone.oy, Phone.aa, Phone.aw, Phone.ay, Phone.oh}:
             return self.hierarchy_feature_close
-        if self in {Phone.m, Phone.n, Phone.ng, Phone.b, Phone.d, Phone.g, Phone.k, Phone.p, Phone.t, Phone.ch, Phone.jh, Phone.f, Phone.s, Phone.sh, Phone.th, Phone.v, Phone.z, Phone.hh, Phone.l, Phone.r, Phone.w, Phone.y}:
+        if self in {Phone.m, Phone.n, Phone.ng, Phone.b, Phone.d, Phone.dh, Phone.g, Phone.k, Phone.p, Phone.t, Phone.ch, Phone.jh, Phone.f, Phone.s, Phone.sh, Phone.th, Phone.v, Phone.z, Phone.hh, Phone.l, Phone.r, Phone.w, Phone.y}:
             return self.hierarchy_feature_manner
         raise NotImplementedError(self)
 
@@ -231,29 +232,29 @@ class Feature(Enum):
     @property
     def _df(self) -> DataFrame:
         df = DataFrame.from_dict(dict([
-            #                                                                                                                                                                                                                            ʊə
-            ("Phone",                  ["aa", "ae", "ah", "ao", "aw", "ay", "b", "ch", "d", "ea", "eh", "er", "ey", "f", "g", "hh", "ia", "ih", "iy", "jh", "k", "l", "m", "n", "ng", "oh", "ow", "oy", "p", "r", "s", "sh", "t", "th", "ua", "uh", "uw", "v", "w", "y", "z"]),
-            (Feature.sonorant.name,    [   1,    1,    1,    1,    1,    1,   0,    0,   0,    1,    1,    1,    1,   0,   0,    0,    1,    1,    1,    0,   0,   1,   1,   1,    1,    1,    1,    1,   0,   1,   0,    0,   0,    0,    1,    1,    1,   0,   1,   1,   0]),
-            (Feature.voiced.name,      [   1,    1,    1,    1,    1,    1,   1,    0,   1,    1,    1,    1,    1,   0,   1,    0,    1,    1,    1,    1,   0,   1,   1,   1,    1,    1,    1,    1,   0,   1,   0,    0,   0,    0,    1,    1,    1,   1,   1,   1,   1]),
-            (Feature.syllabic.name,    [   1,    1,    1,    1,    1,    1,   0,    0,   0,    1,    1,    1,    1,   0,   0,    0,    1,    1,    1,    0,   0,   0,   0,   0,    0,    1,    1,    1,   0,   0,   0,    0,   0,    0,    1,    1,    1,   0,   0,   0,   0]),
-            (Feature.obstruent.name,   [   0,    0,    0,    0,    0,    0,   1,    1,   1,    0,    0,    0,    0,   1,   1,    1,    0,    0,    0,    1,   1,   1,   1,   1,    1,    0,    0,    0,   1,   1,   1,    1,   1,    1,    0,    0,    0,   1,   0,   0,   1]),
-            (Feature.labial.name,      [   0,    0,    0,    0,    0,    0,   1,    0,   0,    0,    0,    0,    0,   1,   0,    0,    0,    0,    0,    0,   0,   0,   1,   0,    0,    0,    0,    0,   1,   0,   0,    0,   0,    0,    0,    0,    0,   1,   0,   0,   0]),
-            (Feature.coronal.name,     [   0,    0,    0,    0,    0,    0,   0,    1,   1,    0,    0,    0,    0,   0,   0,    0,    0,    0,    0,    1,   0,   1,   0,   1,    0,    0,    0,    0,   0,   1,   1,    1,   1,    1,    0,    0,    0,   0,   0,   1,   1]),
-            (Feature.dorsal.name,      [   0,    0,    0,    0,    0,    0,   0,    0,   0,    0,    0,    0,    0,   0,   1,    0,    0,    0,    0,    0,   1,   0,   0,   0,    1,    0,    0,    0,   0,   0,   0,    0,   0,    0,    0,    0,    0,   0,   1,   0,   0]),
-            (Feature.stop.name,        [   0,    0,    0,    0,    0,    0,   1,    0,   1,    0,    0,    0,    0,   0,   1,    0,    0,    0,    0,    0,   1,   0,   0,   0,    0,    0,    0,    0,   1,   0,   0,    0,   1,    0,    0,    0,    0,   0,   0,   0,   0]),
-            (Feature.affricate.name,   [   0,    0,    0,    0,    0,    0,   0,    1,   0,    0,    0,    0,    0,   0,   0,    0,    0,    0,    0,    1,   0,   0,   0,   0,    0,    0,    0,    0,   0,   0,   0,    0,   0,    0,    0,    0,    0,   0,   0,   0,   0]),
-            (Feature.fricative.name,   [   0,    0,    0,    0,    0,    0,   0,    0,   0,    0,    0,    0,    0,   1,   0,    1,    0,    0,    0,    0,   0,   0,   0,   0,    0,    0,    0,    0,   0,   0,   1,    1,   0,    1,    0,    0,    0,   1,   0,   0,   1]),
-            (Feature.sibilant.name,    [   0,    0,    0,    0,    0,    0,   0,    1,   0,    0,    0,    0,    0,   0,   0,    0,    0,    0,    0,    1,   0,   0,   0,   0,    0,    0,    0,    0,   0,   0,   1,    1,   0,    0,    0,    0,    0,   0,   0,   0,   1]),
-            (Feature.approximant.name, [   0,    0,    0,    0,    0,    0,   0,    0,   0,    0,    0,    0,    0,   0,   0,    1,    0,    0,    0,    0,   0,   1,   0,   0,    0,    0,    0,    0,   0,   1,   0,    0,   0,    0,    0,    0,    0,   0,   1,   1,   0]),
-            (Feature.nasal.name,       [   0,    0,    0,    0,    0,    0,   0,    0,   0,    0,    0,    0,    0,   0,   0,    0,    0,    0,    0,    0,   0,   0,   1,   1,    1,    0,    0,    0,   0,   0,   0,    0,   0,    0,    0,    0,    0,   0,   0,   0,   0]),
-            (Feature.front.name,       [   0,    1,    0,    0,    0,    1,   0,    0,   0,    1,    1,    0,    1,   0,   0,    0,    1,    1,    1,    0,   0,   0,   0,   0,    0,    0,    0,    0,   0,   0,   0,    0,   0,    0,    0,    0,    0,   0,   0,   0,   0]),
-            (Feature.central.name,     [   0,    0,    0,    0,    1,    1,   0,    0,   0,    1,    0,    1,    0,   0,   0,    0,    1,    0,    0,    0,   0,   0,   0,   0,    0,    0,    1,    1,   0,   0,   0,    0,   0,    0,    1,    0,    0,   0,   0,   0,   0]),
-            (Feature.back.name,        [   1,    0,    1,    1,    1,    0,   0,    0,   0,    0,    0,    0,    0,   0,   0,    0,    0,    0,    0,    0,   0,   0,   0,   0,    0,    1,    1,    1,   0,   0,   0,    0,   0,    0,    1,    1,    1,   0,   0,   0,   0]),
-            (Feature.close.name,       [   0,    0,    0,    0,    0,    1,   0,    0,   0,    0,    0,    0,    0,   0,   0,    0,    1,    1,    1,    0,   0,   0,   0,   0,    0,    0,    0,    0,   0,   0,   0,    0,   0,    0,    1,    1,    1,   0,   0,   0,   0]),
-            (Feature.close_mid.name,   [   0,    0,    0,    0,    1,    0,   0,    0,   0,    0,    0,    0,    1,   0,   0,    0,    1,    0,    0,    0,   0,   0,   0,   0,    0,    0,    1,    1,   0,   0,   0,    0,   0,    0,    0,    0,    0,   0,   0,   0,   0]),
-            (Feature.open_mid.name,    [   0,    1,    1,    1,    0,    0,   0,    0,   0,    1,    1,    1,    1,   0,   0,    0,    0,    0,    0,    0,   0,   0,   0,   0,    0,    0,    1,    1,   0,   0,   0,    0,   0,    0,    1,    0,    0,   0,   0,   0,   0]),
-            (Feature.open_.name,       [   1,    0,    0,    0,    1,    1,   0,    0,   0,    0,    0,    0,    0,   0,   0,    0,    0,    0,    0,    0,   0,   0,   0,   0,    0,    1,    0,    0,   0,   0,   0,    0,   0,    0,    0,    0,    0,   0,   0,   0,   0]),
-            (Feature.rounded.name,     [   0,    0,    0,    1,    1,    0,   0,    0,   0,    0,    0,    0,    0,   0,   0,    0,    0,    0,    0,    0,   0,   0,   0,   0,    0,    1,    1,    1,   0,   0,   0,    0,   0,    0,    0,    1,    1,   0,   0,   0,   0]),
+            #                                                                                                                                                                                                                                  ʊə
+            ("Phone",                  ["aa", "ae", "ah", "ao", "aw", "ay", "b", "ch", "d", "dh", "ea", "eh", "er", "ey", "f", "g", "hh", "ia", "ih", "iy", "jh", "k", "l", "m", "n", "ng", "oh", "ow", "oy", "p", "r", "s", "sh", "t", "th", "ua", "uh", "uw", "v", "w", "y", "z"]),
+            (Feature.sonorant.name,    [   1,    1,    1,    1,    1,    1,   0,    0,   0,    0,    1,    1,    1,    1,   0,   0,    0,    1,    1,    1,    0,   0,   1,   1,   1,    1,    1,    1,    1,   0,   1,   0,    0,   0,    0,    1,    1,    1,   0,   1,   1,   0]),
+            (Feature.voiced.name,      [   1,    1,    1,    1,    1,    1,   1,    0,   1,    1,    1,    1,    1,    1,   0,   1,    0,    1,    1,    1,    1,   0,   1,   1,   1,    1,    1,    1,    1,   0,   1,   0,    0,   0,    0,    1,    1,    1,   1,   1,   1,   1]),
+            (Feature.syllabic.name,    [   1,    1,    1,    1,    1,    1,   0,    0,   0,    0,    1,    1,    1,    1,   0,   0,    0,    1,    1,    1,    0,   0,   0,   0,   0,    0,    1,    1,    1,   0,   0,   0,    0,   0,    0,    1,    1,    1,   0,   0,   0,   0]),
+            (Feature.obstruent.name,   [   0,    0,    0,    0,    0,    0,   1,    1,   1,    1,    0,    0,    0,    0,   1,   1,    1,    0,    0,    0,    1,   1,   1,   1,   1,    1,    0,    0,    0,   1,   1,   1,    1,   1,    1,    0,    0,    0,   1,   0,   0,   1]),
+            (Feature.labial.name,      [   0,    0,    0,    0,    0,    0,   1,    0,   0,    0,    0,    0,    0,    0,   1,   0,    0,    0,    0,    0,    0,   0,   0,   1,   0,    0,    0,    0,    0,   1,   0,   0,    0,   0,    0,    0,    0,    0,   1,   0,   0,   0]),
+            (Feature.coronal.name,     [   0,    0,    0,    0,    0,    0,   0,    1,   1,    1,    0,    0,    0,    0,   0,   0,    0,    0,    0,    0,    1,   0,   1,   0,   1,    0,    0,    0,    0,   0,   1,   1,    1,   1,    1,    0,    0,    0,   0,   0,   1,   1]),
+            (Feature.dorsal.name,      [   0,    0,    0,    0,    0,    0,   0,    0,   0,    0,    0,    0,    0,    0,   0,   1,    0,    0,    0,    0,    0,   1,   0,   0,   0,    1,    0,    0,    0,   0,   0,   0,    0,   0,    0,    0,    0,    0,   0,   1,   0,   0]),
+            (Feature.stop.name,        [   0,    0,    0,    0,    0,    0,   1,    0,   1,    0,    0,    0,    0,    0,   0,   1,    0,    0,    0,    0,    0,   1,   0,   0,   0,    0,    0,    0,    0,   1,   0,   0,    0,   1,    0,    0,    0,    0,   0,   0,   0,   0]),
+            (Feature.affricate.name,   [   0,    0,    0,    0,    0,    0,   0,    1,   0,    0,    0,    0,    0,    0,   0,   0,    0,    0,    0,    0,    1,   0,   0,   0,   0,    0,    0,    0,    0,   0,   0,   0,    0,   0,    0,    0,    0,    0,   0,   0,   0,   0]),
+            (Feature.fricative.name,   [   0,    0,    0,    0,    0,    0,   0,    0,   0,    1,    0,    0,    0,    0,   1,   0,    1,    0,    0,    0,    0,   0,   0,   0,   0,    0,    0,    0,    0,   0,   0,   1,    1,   0,    1,    0,    0,    0,   1,   0,   0,   1]),
+            (Feature.sibilant.name,    [   0,    0,    0,    0,    0,    0,   0,    1,   0,    0,    0,    0,    0,    0,   0,   0,    0,    0,    0,    0,    1,   0,   0,   0,   0,    0,    0,    0,    0,   0,   0,   1,    1,   0,    0,    0,    0,    0,   0,   0,   0,   1]),
+            (Feature.approximant.name, [   0,    0,    0,    0,    0,    0,   0,    0,   0,    0,    0,    0,    0,    0,   0,   0,    1,    0,    0,    0,    0,   0,   1,   0,   0,    0,    0,    0,    0,   0,   1,   0,    0,   0,    0,    0,    0,    0,   0,   1,   1,   0]),
+            (Feature.nasal.name,       [   0,    0,    0,    0,    0,    0,   0,    0,   0,    0,    0,    0,    0,    0,   0,   0,    0,    0,    0,    0,    0,   0,   0,   1,   1,    1,    0,    0,    0,   0,   0,   0,    0,   0,    0,    0,    0,    0,   0,   0,   0,   0]),
+            (Feature.front.name,       [   0,    1,    0,    0,    0,    1,   0,    0,   0,    0,    1,    1,    0,    1,   0,   0,    0,    1,    1,    1,    0,   0,   0,   0,   0,    0,    0,    0,    0,   0,   0,   0,    0,   0,    0,    0,    0,    0,   0,   0,   0,   0]),
+            (Feature.central.name,     [   0,    0,    0,    0,    1,    1,   0,    0,   0,    0,    1,    0,    1,    0,   0,   0,    0,    1,    0,    0,    0,   0,   0,   0,   0,    0,    0,    1,    1,   0,   0,   0,    0,   0,    0,    1,    0,    0,   0,   0,   0,   0]),
+            (Feature.back.name,        [   1,    0,    1,    1,    1,    0,   0,    0,   0,    0,    0,    0,    0,    0,   0,   0,    0,    0,    0,    0,    0,   0,   0,   0,   0,    0,    1,    1,    1,   0,   0,   0,    0,   0,    0,    1,    1,    1,   0,   0,   0,   0]),
+            (Feature.close.name,       [   0,    0,    0,    0,    0,    1,   0,    0,   0,    0,    0,    0,    0,    0,   0,   0,    0,    1,    1,    1,    0,   0,   0,   0,   0,    0,    0,    0,    0,   0,   0,   0,    0,   0,    0,    1,    1,    1,   0,   0,   0,   0]),
+            (Feature.close_mid.name,   [   0,    0,    0,    0,    1,    0,   0,    0,   0,    0,    0,    0,    0,    1,   0,   0,    0,    1,    0,    0,    0,   0,   0,   0,   0,    0,    0,    1,    1,   0,   0,   0,    0,   0,    0,    0,    0,    0,   0,   0,   0,   0]),
+            (Feature.open_mid.name,    [   0,    1,    1,    1,    0,    0,   0,    0,   0,    0,    1,    1,    1,    1,   0,   0,    0,    0,    0,    0,    0,   0,   0,   0,   0,    0,    0,    1,    1,   0,   0,   0,    0,   0,    0,    1,    0,    0,   0,   0,   0,   0]),
+            (Feature.open_.name,       [   1,    0,    0,    0,    1,    1,   0,    0,   0,    0,    0,    0,    0,    0,   0,   0,    0,    0,    0,    0,    0,   0,   0,   0,   0,    0,    1,    0,    0,   0,   0,   0,    0,   0,    0,    0,    0,    0,   0,   0,   0,   0]),
+            (Feature.rounded.name,     [   0,    0,    0,    1,    1,    0,   0,    0,   0,    0,    0,    0,    0,    0,   0,   0,    0,    0,    0,    0,    0,   0,   0,   0,   0,    0,    1,    1,    1,   0,   0,   0,    0,   0,    0,    0,    1,    1,   0,   0,   0,   0]),
         ]))
         df.set_index(keys="Phone", drop=True, inplace=True, verify_integrity=True)
         return df
